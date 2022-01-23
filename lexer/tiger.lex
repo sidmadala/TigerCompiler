@@ -4,11 +4,17 @@ type lexresult = Tokens.token
 val lineNum = ErrorMsg.lineNum
 val linePos = ErrorMsg.linePos
 fun err(p1,p2) = ErrorMsg.error p1
-
+val sb = ref ""
+val sbStartPos = ref 0
+val isSbFinished = ref true
 fun eof() = let val pos = hd(!linePos) in Tokens.EOF(pos,pos) end
 
 
-%% 
+%%
+digit=[0-9];
+ctrlChar=\\\^[@-_ ?];
+fmtChar=[ \t\^L];
+%s STRING FMTSEQUENCE;
 %%
 \n	=> (lineNum := !lineNum+1; linePos := yypos :: !linePos; continue());
 .       => (ErrorMsg.error yypos ("illegal character " ^ yytext); continue());
@@ -55,3 +61,22 @@ fun eof() = let val pos = hd(!linePos) in Tokens.EOF(pos,pos) end
 <INITIAL> "&" => (Tokens.AND(yypos, yypos+1));
 <INITIAL> "|" => (Tokens.OR(yypos, yypos+1));
 <INITIAL> ":=" => (Tokens.ASSIGN(yypos, yypos+2));
+<INITIAL> \" => (YYBEGIN STRING; sb := ""; sbStartPos := yypos; isSbFinished := false; continue());
+<INITIAL> \n => (linePos := yypos :: !linePos; lineNum := !lineNum + 1; continue());
+<STRING> \" => (YYBEGIN INITIAL; isSbFinished := true; Tokens.STRING(!sb, !sbStartPos, yypos + 1));
+<STRING> \\n => (sb := !sb ^ "\n"; continue());
+<STRING> \\t => (sb := !sb ^ "\t"; continue());
+<STRING> {ctrlChar} => (sb := !sb ^ Char.toString(Char.chr(case String.substring(yytext, 2, 1) of " " => 32 | "?" => 127 | _  => Char.ord(String.sub(yytext, 2)) - 64)); continue());
+<STRING> \\{digit}{digit}{digit} => (sb := !sb ^ yytext; continue());
+<STRING> \\\" => (sb := !sb ^ "\""; continue());
+<STRING> \\\\ => (sb := !sb ^ "\\"; continue());
+<STRING> \\ => (YYBEGIN FMTSEQUENCE; continue());
+<STRING> \n => (linePos := yypos :: !linePos; lineNum := !lineNum + 1; sb := !sb ^ yytext; ErrorMsg.error yypos ("illegal newline in string"); continue());
+<STRING> . => (sb := !sb ^ yytext; continue());
+<FMTSEQUENCE> {fmtChar} => (continue());
+<FMTSEQUENCE> \n => (linePos := yypos :: !linePos; lineNum := !lineNum + 1; continue());
+<FMTSEQUENCE> \\ => (YYBEGIN STRING; continue());
+<FMTSEQUENCE> . => (ErrorMsg.error yypos ("illegal character(none-whitespce) in formating sequence: " ^ yytext); continue());
+.       => (ErrorMsg.error yypos ("illegal character " ^ yytext); continue());
+
+
