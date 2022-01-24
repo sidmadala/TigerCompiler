@@ -106,7 +106,7 @@ fmtChar=[ \t\^L];
 <STRING> \\\" => (sb := !sb ^ "\""; continue());
 <STRING> \\\\ => (sb := !sb ^ "\\"; continue());
 <STRING> \\ => (YYBEGIN FMTSEQ; continue());
-<STRING> \n => (linePos := yypos :: !linePos; lineNum := !lineNum + 1; ErrorMsg.error yypos ("illegal newline in string"); continue());
+<STRING> \n => (linePos := yypos :: !linePos; lineNum := !lineNum + 1; sb := !sb ^ "\n"; ErrorMsg.error yypos ("illegal newline in string"); continue());
 <STRING> . => (sb := !sb ^ yytext; continue());
 
 <FMTSEQ> {fmtChar} => (continue());
