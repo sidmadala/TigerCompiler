@@ -32,7 +32,7 @@ fun eof() =
 
 ctrlChar=\\\^[@-_ ?];
 fmtChar=[ \t\^L];
-digit=[0-9]*;
+digit=[0-9]+;
 id=[a-zA-Z][a-zA-Z0-9_]*;
 %s COMMENT STRING FMTSEQ;
 
