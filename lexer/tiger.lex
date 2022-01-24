@@ -30,9 +30,10 @@ fun eof() =
 
 %%
 
-digit=[0-9];
 ctrlChar=\\\^[@-_ ?];
 fmtChar=[ \t\^L];
+digit=[0-9]*;
+id=[a-zA-Z][a-zA-Z0-9_]*;
 %s COMMENT STRING FMTSEQ;
 
 %%
@@ -54,6 +55,9 @@ fmtChar=[ \t\^L];
                    continue());
 
 <COMMENT>. => (continue());
+
+<INITIAL> \n => (linePos := yypos :: !linePos; lineNum := !lineNum + 1; continue());
+<INITIAL> \t => (continue());
 
 <INITIAL> "while" => (Tokens.WHILE(yypos, yypos+5));
 <INITIAL> "for" => (Tokens.FOR(yypos, yypos+3));
@@ -94,10 +98,11 @@ fmtChar=[ \t\^L];
 <INITIAL> ">=" => (Tokens.GE(yypos, yypos+2));
 <INITIAL> "&" => (Tokens.AND(yypos, yypos+1));
 <INITIAL> "|" => (Tokens.OR(yypos, yypos+1));
-
 <INITIAL> ":=" => (Tokens.ASSIGN(yypos, yypos+2));
+<INITIAL> {digit} => (Tokens.INT(valOf(Int.fromString(yytext)), yypos, yypos+size yytext));
+<INITIAL> {id} => (Tokens.ID(yytext, yypos, yypos+size yytext));
+
 <INITIAL> \" => (YYBEGIN STRING; sb := ""; sbStartPos := yypos; isSbFinished := false; continue());
-<INITIAL> \n => (linePos := yypos :: !linePos; lineNum := !lineNum + 1; continue());
 <STRING> \" => (YYBEGIN INITIAL; isSbFinished := true; Tokens.STRING(!sb, !sbStartPos, yypos + 1));
 <STRING> \\n => (sb := !sb ^ "\n"; continue());
 <STRING> \\t => (sb := !sb ^ "\t"; continue());
@@ -114,4 +119,4 @@ fmtChar=[ \t\^L];
 <FMTSEQ> \" => (YYBEGIN INITIAL; ErrorMsg.error yypos ("FMTSEQ not closed"); isSbFinished := true; Tokens.STRING(!sb, !sbStartPos, yypos + 1));
 <FMTSEQ> \\ => (YYBEGIN STRING; continue());
 <FMTSEQ> .  => (YYBEGIN STRING; ErrorMsg.error yypos ("illegal character(none-whitespce) in formating sequence: " ^ yytext); continue());
-.           => (ErrorMsg.error yypos ("illegal character " ^ yytext); continue());
+<INITIAL>.           => (ErrorMsg.error yypos ("illegal character " ^ yytext); continue()); 
