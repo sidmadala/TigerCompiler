@@ -24,11 +24,9 @@ fun eof() =
     in
         case (!isSbFinished, !commentCount) of
             (true, 0) => Tokens.EOF(pos, pos)
-            (true, _) => (ErrorMsg.error(pos, "Unclosed comment"); Tokens.EOF(pos, pos)) (* TODO: Add position matching *)
-            (false, _) => (ErrorMsg.error(pos, "Unclosed string"); Tokens.EOF(pos, pos)) (* TODO: Add position matching *)
-        end
+          | (true, _) => (ErrorMsg.error(pos, "Unclosed comment"); Tokens.EOF(pos, pos)) (* TODO: Add position matching *)
+          | (false, _) => (ErrorMsg.error(pos, "Unclosed string"); Tokens.EOF(pos, pos)) (* TODO: Add position matching *)
     end
-
 
 %%
 
@@ -39,23 +37,23 @@ fmtChar=[ \t\^L];
 
 %%
 
-<INITIAL> "/*" => (YYBEGIN COMMENT; 
+<INITIAL>"/*" => (YYBEGIN COMMENT; 
                   commentStart := yypos;
                   commentCount := !commentCount + 1;
-                  continue();)
+                  continue());
 
-<COMMENT> "/*" => (commentCount := !commentCount + 1;
-                   continue();)
+<COMMENT>"/*" => (commentCount := !commentCount + 1;
+                   continue());
 
-<COMMENT> "*/" => (commentCount := !commentCount - 1;
+<COMMENT>"*/" => (commentCount := !commentCount - 1;
                    if !commentCount = 0 then YYBEGIN INITIAL else ();
-                   continue();)
+                   continue());
 
-<COMMENT> [\n] => (lineNum := !lineNum + 1;
+<COMMENT>[\n] => (lineNum := !lineNum + 1;
                    linePos := yypos + 1 :: !linePos;
-                   continue();)
+                   continue());
 
-<COMMENT> . => (continue();)
+<COMMENT>. => (continue());
 
 (* reserved words *)
 <INITIAL> "while" => (Tokens.WHILE(yypos, yypos+5));
@@ -115,7 +113,5 @@ fmtChar=[ \t\^L];
 <FMTSEQ> {fmtChar} => (continue());
 <FMTSEQ> \n => (linePos := yypos :: !linePos; lineNum := !lineNum + 1; continue());
 <FMTSEQ> \\ => (YYBEGIN STRING; continue());
-<FMTSEQ> . => (ErrorMsg.error yypos ("illegal character(none-whitespce) in formating sequence: " ^ yytext); continue());
-.       => (ErrorMsg.error yypos ("illegal character " ^ yytext); continue());
-
-
+<FMTSEQ> .  => (ErrorMsg.error yypos ("illegal character(none-whitespce) in formating sequence: " ^ yytext); continue());
+.           => (ErrorMsg.error yypos ("illegal character " ^ yytext); continue());
