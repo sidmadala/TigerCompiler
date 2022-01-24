@@ -112,5 +112,5 @@ fmtChar=[ \t\^L];
 <FMTSEQ> {fmtChar} => (continue());
 <FMTSEQ> \n => (linePos := yypos :: !linePos; lineNum := !lineNum + 1; continue());
 <FMTSEQ> \\ => (YYBEGIN STRING; continue());
-<FMTSEQ> .  => (ErrorMsg.error yypos ("illegal character(none-whitespce) in formating sequence: " ^ yytext); continue());
+<FMTSEQ> .  => (YYBEGIN STRING; ErrorMsg.error yypos ("illegal character(none-whitespce) in formating sequence: " ^ yytext); continue());
 .           => (ErrorMsg.error yypos ("illegal character " ^ yytext); continue());
