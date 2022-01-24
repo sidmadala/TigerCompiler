@@ -102,7 +102,7 @@ fmtChar=[ \t\^L];
 <STRING> \\n => (sb := !sb ^ "\n"; continue());
 <STRING> \\t => (sb := !sb ^ "\t"; continue());
 <STRING> {ctrlChar} => (sb := !sb ^ Char.toString(Char.chr(case String.substring(yytext, 2, 1) of " " => 32 | "?" => 127 | _  => Char.ord(String.sub(yytext, 2)) - 64)); continue());
-<STRING> \\{digit}{digit}{digit} => (sb := !sb ^ yytext; continue());
+<STRING> \\[0-1][0-9][0-9]|\\2[0-4][0-9]|\\25[0-5] => (sb := !sb ^ Char.toString(Char.chr(valOf(Int.fromString(String.substring(yytext, 1, 3))))); continue());
 <STRING> \\\" => (sb := !sb ^ "\""; continue());
 <STRING> \\\\ => (sb := !sb ^ "\\"; continue());
 <STRING> \\ => (YYBEGIN FMTSEQ; continue());
