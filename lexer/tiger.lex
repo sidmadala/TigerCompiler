@@ -15,7 +15,7 @@ val sb = ref ""  (* String builder *)
 val sbStartPos = ref 0
 val isSbFinished = ref true  (* Handle unclosed strings *)
 val commentCount = ref 0  (* Handle nested/unclosed comments *)
-val commentStartPos = ref ~1
+val commentStart = ref ~1
 
 (* End of file handler *)
 fun eof() = 
@@ -24,8 +24,8 @@ fun eof() =
     in
         case (!isSbFinished, !commentCount) of
             (true, 0) => Tokens.EOF(pos, pos)
-          | (true, _) => (ErrorMsg.error(pos, "Unclosed comment"); Tokens.EOF(pos, pos)) (* TODO: Add position matching *)
-          | (false, _) => (ErrorMsg.error(pos, "Unclosed string"); Tokens.EOF(pos, pos)) (* TODO: Add position matching *)
+          | (true, _) => (ErrorMsg.error (pos) "Unclosed comment"; Tokens.EOF(pos, pos)) (* TODO: Add position matching *)
+          | (false, _) => (ErrorMsg.error (pos) "Unclosed string"; Tokens.EOF(pos, pos)) (* TODO: Add position matching *)
     end
 
 %%
@@ -55,13 +55,12 @@ fmtChar=[ \t\^L];
 
 <COMMENT>. => (continue());
 
-(* reserved words *)
 <INITIAL> "while" => (Tokens.WHILE(yypos, yypos+5));
 <INITIAL> "for" => (Tokens.FOR(yypos, yypos+3));
 <INITIAL> "to" => (Tokens.TO(yypos, yypos+2));
 <INITIAL> "break" => (Tokens.BREAK(yypos, yypos+5));
 <INITIAL> "in" => (Tokens.IN(yypos, yypos+2));
-<INITIAL> "end" => (Tokens.END(yypos, yypos+3);
+<INITIAL> "end" => (Tokens.END(yypos, yypos+3));
 <INITIAL> "function" => (Tokens.FUNCTION(yypos, yypos+8));
 <INITIAL> "var" => (Tokens.VAR(yypos, yypos+3));
 <INITIAL> "type" => (Tokens.TYPE(yypos, yypos+4));
@@ -73,7 +72,6 @@ fmtChar=[ \t\^L];
 <INITIAL> "nil" => (Tokens.NIL(yypos, yypos+3));
 <INITIAL> "let" => (Tokens.LET(yypos, yypos+3));
 
-(* arithmetic and punctuation *)
 <INITIAL> "," => (Tokens.COMMA(yypos, yypos+1));
 <INITIAL> ":" => (Tokens.COLON(yypos, yypos+1));
 <INITIAL> ";" => (Tokens.SEMICOLON(yypos, yypos+1));
@@ -110,6 +108,7 @@ fmtChar=[ \t\^L];
 <STRING> \\ => (YYBEGIN FMTSEQ; continue());
 <STRING> \n => (linePos := yypos :: !linePos; lineNum := !lineNum + 1; sb := !sb ^ yytext; ErrorMsg.error yypos ("illegal newline in string"); continue());
 <STRING> . => (sb := !sb ^ yytext; continue());
+
 <FMTSEQ> {fmtChar} => (continue());
 <FMTSEQ> \n => (linePos := yypos :: !linePos; lineNum := !lineNum + 1; continue());
 <FMTSEQ> \\ => (YYBEGIN STRING; continue());
