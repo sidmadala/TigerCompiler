@@ -31,7 +31,7 @@ fun eof() =
 %%
 
 ctrlChar=\\\^[@-_ ?];
-fmtChar=[ \t\^L];
+fmtChar=[ \t\^L\r];
 digit=[0-9]+;
 id=[a-zA-Z][a-zA-Z0-9_]*;
 %s COMMENT STRING FMTSEQ;
@@ -57,8 +57,7 @@ id=[a-zA-Z][a-zA-Z0-9_]*;
 <COMMENT>. => (continue());
 
 <INITIAL> \n => (linePos := yypos :: !linePos; lineNum := !lineNum + 1; continue());
-<INITIAL> \t => (continue());
-<INITIAL> " " => (continue());
+<INITIAL> {fmtChar} => (continue());
 <INITIAL> "while" => (Tokens.WHILE(yypos, yypos+5));
 <INITIAL> "for" => (Tokens.FOR(yypos, yypos+3));
 <INITIAL> "to" => (Tokens.TO(yypos, yypos+2));
