@@ -58,7 +58,7 @@ id=[a-zA-Z][a-zA-Z0-9_]*;
 
 <INITIAL> \n => (linePos := yypos :: !linePos; lineNum := !lineNum + 1; continue());
 <INITIAL> \t => (continue());
-
+<INITIAL> " " => (continue());
 <INITIAL> "while" => (Tokens.WHILE(yypos, yypos+5));
 <INITIAL> "for" => (Tokens.FOR(yypos, yypos+3));
 <INITIAL> "to" => (Tokens.TO(yypos, yypos+2));
