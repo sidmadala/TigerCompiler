@@ -1,7 +1,7 @@
 
 TODO: 
 
-- [] Comments: Sid
+- [x] Comments: Sid
 - [x] Reserved words: Arithmetic: Michelle
-- [] General Strings: Zian
+- [x] General Strings: Zian
 - [] Organize test cases: Sid
