@@ -1,2 +1,5 @@
-MacOS File
-.DS_Store
+# MacOS File
+*.DS_Store
+
+# SML Files
+**/.cm
