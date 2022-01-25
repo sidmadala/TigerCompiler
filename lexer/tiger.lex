@@ -27,6 +27,7 @@ fun eof() =
             commentCount := 0;
             commentStart := ~1;
             sbStartPos := ~1;
+            isSbFinished := true;
             sb := ""
         end
     in
