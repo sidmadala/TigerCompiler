@@ -21,17 +21,19 @@ val commentStart = ref ~1
 fun eof() = 
     let 
         val pos = hd(!linePos) 
+        fun resetValues() = 
+        let
+        in
+            commentCount := 0;
+            commentStart := ~1;
+            sbStartPos := ~1;
+            sb := ""
+        end
     in
         case (!isSbFinished, !commentCount) of
-            (true, 0) => Tokens.EOF(pos, pos)
-          | (true, _) => (ErrorMsg.error (pos) "Unclosed comment"; Tokens.EOF(pos, pos)) (* TODO: Add position matching *)
-          | (false, _) => (ErrorMsg.error (pos) "Unclosed string"; Tokens.EOF(pos, pos)) (* TODO: Add position matching *)
-
-        (* Reseting values for future lexing *)
-        commentCount := 0;
-		commentStart := ~1;
-		sbStartPos := ~1;
-		sb := "";
+            (true, 0) => (resetValues(); Tokens.EOF(pos, pos))
+          | (true, _) => (resetValues(); ErrorMsg.error (pos) "Unclosed comment"; Tokens.EOF(pos, pos)) (* TODO: Add position matching *)
+          | (false, _) => (resetValues(); ErrorMsg.error (pos) "Unclosed string"; Tokens.EOF(pos, pos)) (* TODO: Add position matching *)
     end
 
 %%
@@ -52,9 +54,9 @@ id=[a-zA-Z][a-zA-Z0-9_]*;
 <COMMENT>"/*" => (commentCount := !commentCount + 1;
                    continue());
 
-<COMMENT>"*/" => (if !commentCount = 0 then YYBEGIN INITIAL else ();
-                  commentCount := !commentCount - 1;
-                  continue());
+<COMMENT>"*/" => (commentCount := !commentCount - 1;
+                   if !commentCount = 0 then YYBEGIN INITIAL else ();
+                   continue());
 
 <COMMENT>[\n] => (lineNum := !lineNum + 1;
                    linePos := yypos + 1 :: !linePos;
@@ -125,3 +127,4 @@ id=[a-zA-Z][a-zA-Z0-9_]*;
 <FMTSEQ> \\ => (YYBEGIN STRING; continue());
 <FMTSEQ> .  => (YYBEGIN STRING; ErrorMsg.error yypos ("illegal character(none-whitespce) in formating sequence: " ^ yytext); continue());
 <INITIAL>.           => (ErrorMsg.error yypos ("illegal character " ^ yytext); continue()); 
+
