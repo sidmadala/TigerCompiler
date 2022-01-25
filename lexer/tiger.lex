@@ -26,6 +26,12 @@ fun eof() =
             (true, 0) => Tokens.EOF(pos, pos)
           | (true, _) => (ErrorMsg.error (pos) "Unclosed comment"; Tokens.EOF(pos, pos)) (* TODO: Add position matching *)
           | (false, _) => (ErrorMsg.error (pos) "Unclosed string"; Tokens.EOF(pos, pos)) (* TODO: Add position matching *)
+
+        (* Reseting values for future lexing *)
+        commentCount := 0;
+		commentStart := ~1;
+		sbStartPos := ~1;
+		sb := "";
     end
 
 %%
@@ -46,9 +52,9 @@ id=[a-zA-Z][a-zA-Z0-9_]*;
 <COMMENT>"/*" => (commentCount := !commentCount + 1;
                    continue());
 
-<COMMENT>"*/" => (commentCount := !commentCount - 1;
-                   if !commentCount = 0 then YYBEGIN INITIAL else ();
-                   continue());
+<COMMENT>"*/" => (if !commentCount = 0 then YYBEGIN INITIAL else ();
+                  commentCount := !commentCount - 1;
+                  continue());
 
 <COMMENT>[\n] => (lineNum := !lineNum + 1;
                    linePos := yypos + 1 :: !linePos;
