@@ -26,15 +26,15 @@ fun eof() =
         in
             commentCount := 0;
             commentStart := ~1;
-            sbStartPos := ~1;
+            sbStartPos := 0;
             isSbFinished := true;
             sb := ""
         end
     in
         case (!isSbFinished, !commentCount) of
             (true, 0) => (resetValues(); Tokens.EOF(pos, pos))
-          | (true, _) => (resetValues(); ErrorMsg.error (pos) "Unclosed comment"; Tokens.EOF(pos, pos)) (* TODO: Add position matching *)
-          | (false, _) => (resetValues(); ErrorMsg.error (pos) "Unclosed string"; Tokens.EOF(pos, pos)) (* TODO: Add position matching *)
+          | (true, _) => (resetValues(); ErrorMsg.error (pos) "UNcLOseD cOMmeNT"; Tokens.EOF(pos, pos)) (* TODO: Add position matching *)
+          | (false, _) => (resetValues(); ErrorMsg.error (pos) "UnCloSed StRinG"; Tokens.EOF(pos, pos)) (* TODO: Add position matching *)
     end
 
 %%
@@ -126,6 +126,6 @@ id=[a-zA-Z][a-zA-Z0-9_]*;
 <FMTSEQ> \n => (linePos := yypos :: !linePos; lineNum := !lineNum + 1; continue());
 <FMTSEQ> \" => (YYBEGIN INITIAL; ErrorMsg.error yypos ("FMTSEQ not closed"); isSbFinished := true; Tokens.STRING(!sb, !sbStartPos, yypos + 1));
 <FMTSEQ> \\ => (YYBEGIN STRING; continue());
-<FMTSEQ> .  => (YYBEGIN STRING; ErrorMsg.error yypos ("illegal character(none-whitespce) in formating sequence: " ^ yytext); continue());
+<FMTSEQ> .  => (YYBEGIN STRING; ErrorMsg.error yypos ("illegal character (none-whitespace) in formating sequence: " ^ yytext); continue());
 <INITIAL>.           => (ErrorMsg.error yypos ("illegal character " ^ yytext); continue()); 
 
