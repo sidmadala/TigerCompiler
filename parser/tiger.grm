@@ -38,3 +38,50 @@ program	: exp				(exp)
 
 	
 exp: NIL		(A.NilExp)
+
+
+
+
+
+
+
+
+
+(* fun *)
+fundecs : fundec    ()
+        | fundec fundecs    ()
+
+fundec : FUNCTION ID LPAREN tyfields RPAREN EQ exp      ()
+       | FUNCTION ID LPAREN tyfields RPAREN COLON ID EQ exp     ()
+
+vardec : VAR ID ASSIGN exp      ()
+       | VAR ID COLON ID ASSIGN exp     ()
+
+tydecs : tydec      ()
+       | tydec tydecs   ()
+
+tydec : TYPE ID EQ ty   ()
+
+ty : ID     ()
+   | LBRACE tyfields RBRACE   ()
+   | ARRAY OF ID    ()
+
+tyfields :                 ()
+         | ID COLON ID     ()
+         | ID COLON ID COMMA tyfields   ()
+	
+
+arithexp : MINUS exp %prec UMINUS     ()
+         | exp PLUS exp     ()
+         | exp MINUS exp    ()
+         | exp TIMES exp    ()
+         | exp DIVIDE exp   ()
+         | exp EQ exp       ()
+         | exp NEQ exp      ()
+         | exp LT exp       ()
+         | exp LE exp       ()
+         | exp GT exp       ()
+         | exp GE exp       ()
+         | exp AND exp      ()
+         | exp OR exp       ()
+         | INT              ()
