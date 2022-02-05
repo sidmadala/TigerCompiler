@@ -32,7 +32,7 @@ structure A = Absyn
 %value INT (1)
 %value STRING ("")
 
-%nonassoc EQ NEQ
+%nonassoc EQ NEQ LT GT LE GE
 %left PLUS MINUS
 %left TIMES DIV
 %left UMINUS
@@ -40,10 +40,33 @@ structure A = Absyn
 
 %%
 
-program	: exp				(exp)
-	
-exp: NIL		(A.NilExp)
+program : exp				              (exp)
 
+(* general exp *)
+exp:     NIL		                            (A.NilExp)
+       | STRING                                  ()
+       (* conditional *)
+       | IF exp THEN exp ELSE exp                () 
+       | IF exp THEN exp                         ()
+       (* math *)
+       | arithexp                                () 
+       (* loops *)
+       | WHILE exp DO exp                        ()
+       | FOR ID ASSIGN exp TO exp DO exp         ()
+       | BREAK                                   ()
+       (* let decs TODO: declist with all types of declarations + mutually recursive list stuff*)
+       | LET declist IN seq_exp END              ()
+       (* functions *)
+       | fundec
+       (* misc parentheses *)
+       | LPAREN exp RPAREN			       ()
+       | LPAREN RPAREN                           ()
+       | LPAREN exp SEMICOLON exp_seq RPAREN     ()
+
+(* sequential expressions *)
+seq_exp : exp                                    ()
+       | seq_exp SEMICOLON exp                   ()
+	
 
 (* fun *)
 fundecs : fundec    ()
@@ -67,7 +90,6 @@ ty : ID     ()
 tyfields :                 ()
          | ID COLON ID     ()
          | ID COLON ID COMMA tyfields   ()
-	
 
 arithexp : MINUS exp %prec UMINUS     ()
          | exp PLUS exp     ()
@@ -83,3 +105,8 @@ arithexp : MINUS exp %prec UMINUS     ()
          | exp AND exp      ()
          | exp OR exp       ()
          | INT              ()
+
+(* record initializing parameters*)
+record_param : ID EQ exp				()
+       | ID EQ exp COMMA record_param		()
+
