@@ -32,19 +32,17 @@ structure A = Absyn
 %value INT (1)
 %value STRING ("")
 
+%nonassoc EQ NEQ
+%left PLUS MINUS
+%left TIMES DIV
+%left UMINUS
+%right EXP
+
 %%
 
 program	: exp				(exp)
-
 	
 exp: NIL		(A.NilExp)
-
-
-
-
-
-
-
 
 
 (* fun *)
