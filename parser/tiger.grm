@@ -65,6 +65,8 @@ exp:     NIL		                                                 (A.NilExp)
        (* lvalue exp and assignment *)
        | lvalue                                                       ()
        | l_value ASSIGN exp                                           ()
+       | recorddec                                                    ()
+       | arraydec                                                     ()
 
 lvalue: ID                                                            ()
        | lvalue DOT ID                                                ()
@@ -74,7 +76,6 @@ lvalue: ID                                                            ()
 seq_exp : exp                                                         ()
        | seq_exp SEMICOLON exp                                        ()
 	
-
 (* fun *)
 fundecs : fundec                                                      ()
         | fundec fundecs                                              ()
@@ -113,6 +114,18 @@ opexp : MINUS exp %prec UMINUS      (A.OpExp {left = exp1, oper = A.oper MinusOp
          | exp OR exp               ()           
          | INT                      (A.IntExp INT)
 
+recorddec : ID LBRACE record_param RBRACE                                ()
+       | ID LBRACE RBRACE                                             ()
+
 (* record initializing parameters*)
 record_param : ID EQ exp				                     ()
        | ID EQ exp COMMA record_param		                     ()
+
+arraydec : ID LBRACK exp RBRACK OF exp                                ()
+
+declist : dec                                                          ()
+       | dec declist                                                   ()
+
+dec : fundecs                                                           ()
+       | tydecs                                                         ()
+       | vardec                                                         ()
