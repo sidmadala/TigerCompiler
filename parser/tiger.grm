@@ -8,7 +8,7 @@ structure A = Absyn
   | COMMA | COLON | SEMICOLON | LPAREN | RPAREN | LBRACK | RBRACK 
   | LBRACE | RBRACE | DOT 
   | PLUS | MINUS | TIMES | DIVIDE | EQ | NEQ | LT | LE | GT | GE
-  | AND | OR | ASSIGN
+  | AND | OR | ASSIGN | UMINUS
   | ARRAY | IF | THEN | ELSE | WHILE | FOR | TO | DO | LET | IN | END | OF 
   | BREAK | NIL
   | FUNCTION | VAR | TYPE 
@@ -26,7 +26,7 @@ structure A = Absyn
        | declist of A.dec list
        | vardec of A.dec
        | ty of A.ty
-       | tydec of of {name: A.symbol, ty: A.ty, pos: A.pos}
+       | tydec of {name: A.symbol, ty: A.ty, pos: A.pos}
        | tyfields of A.field list
        | tylist of {name: A.symbol, ty: A.ty, pos: A.pos} list
        | arrayRecordBuilder of A.exp
@@ -57,7 +57,7 @@ structure A = Absyn
 %right ELSE
 %left OR
 %left AND
-%nonassoc EQ NEQ LT GT LE G
+%nonassoc EQ NEQ LT GT LE GE
 %left PLUS MINUS
 %left TIMES DIVIDE
 %left UMINUS
