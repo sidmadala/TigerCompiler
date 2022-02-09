@@ -19,12 +19,12 @@ state 0:
 	BREAK	shift 8
 	NIL	shift 7
 
-	program	goto 137
+	program	goto 144
 	exp	goto 6
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
@@ -41,7 +41,7 @@ state 1:
 
 state 2:
 
-	exp : funExp .  (reduce by rule 17)
+	exp : funexp .  (reduce by rule 17)
 
 
 
@@ -211,7 +211,7 @@ state 11:
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
@@ -238,7 +238,7 @@ state 12:
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
@@ -264,7 +264,7 @@ state 13:
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
@@ -293,7 +293,7 @@ state 14:
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
@@ -321,10 +321,13 @@ state 17:
 
 	lvalue : ID .  (reduce by rule 39)
 	lvalue_not_id : ID . LBRACK exp RBRACK 
+	funexp : ID . LPAREN RPAREN 
+	funexp : ID . LPAREN fun_param RPAREN 
 	arrayRecordBuilder : ID . LBRACK exp RBRACK OF exp 
 	arrayRecordBuilder : ID . LBRACE record_param RBRACE 
 	arrayRecordBuilder : ID . LBRACE RBRACE 
 
+	LPAREN	shift 51
 	LBRACK	shift 50
 	LBRACE	shift 49
 
@@ -348,11 +351,11 @@ state 18:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 51
+	exp	goto 52
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
@@ -374,11 +377,11 @@ state 19:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 52
+	exp	goto 53
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
@@ -388,7 +391,7 @@ state 20:
 
 	lvalue_not_id : lvalue DOT . ID 
 
-	ID	shift 53
+	ID	shift 54
 
 
 	.	error
@@ -410,11 +413,11 @@ state 21:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 54
+	exp	goto 55
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
@@ -436,11 +439,11 @@ state 22:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 55
+	exp	goto 56
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
@@ -462,11 +465,11 @@ state 23:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 56
+	exp	goto 57
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
@@ -488,11 +491,11 @@ state 24:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 57
+	exp	goto 58
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
@@ -514,11 +517,11 @@ state 25:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 58
+	exp	goto 59
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
@@ -540,11 +543,11 @@ state 26:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 59
+	exp	goto 60
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
@@ -566,11 +569,11 @@ state 27:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 60
+	exp	goto 61
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
@@ -592,11 +595,11 @@ state 28:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 61
+	exp	goto 62
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
@@ -618,11 +621,11 @@ state 29:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 62
+	exp	goto 63
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
@@ -644,11 +647,11 @@ state 30:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 63
+	exp	goto 64
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
@@ -670,11 +673,11 @@ state 31:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 64
+	exp	goto 65
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
@@ -696,11 +699,11 @@ state 32:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 65
+	exp	goto 66
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
@@ -714,7 +717,7 @@ state 33:
 
 	TYPE	shift 40
 
-	tydec	goto 66
+	tydec	goto 67
 
 	.	reduce by rule 45
 
@@ -743,14 +746,14 @@ state 36:
 	exp : LET declist . IN END 
 	declist : declist . dec 
 
-	IN	shift 68
+	IN	shift 69
 	FUNCTION	shift 42
 	VAR	shift 41
 	TYPE	shift 40
 
 	fundec	goto 39
 	funlist	goto 38
-	dec	goto 67
+	dec	goto 68
 	vardec	goto 35
 	tydec	goto 34
 	tylist	goto 33
@@ -775,25 +778,25 @@ state 38:
 
 	FUNCTION	shift 42
 
-	fundec	goto 69
+	fundec	goto 70
 
 	.	reduce by rule 44
 
 
 state 39:
 
-	funlist : fundec .  (reduce by rule 62)
+	funlist : fundec .  (reduce by rule 64)
 
 
 
-	.	reduce by rule 62
+	.	reduce by rule 64
 
 
 state 40:
 
 	tydec : TYPE . ID EQ ty 
 
-	ID	shift 70
+	ID	shift 71
 
 
 	.	error
@@ -804,7 +807,7 @@ state 41:
 	vardec : VAR . ID ASSIGN exp 
 	vardec : VAR . ID COLON ID ASSIGN exp 
 
-	ID	shift 71
+	ID	shift 72
 
 
 	.	error
@@ -815,7 +818,7 @@ state 42:
 	fundec : FUNCTION . ID LPAREN tyfields RPAREN COLON ID EQ exp 
 	fundec : FUNCTION . ID LPAREN tyfields RPAREN EQ exp 
 
-	ID	shift 72
+	ID	shift 73
 
 
 	.	error
@@ -825,7 +828,7 @@ state 43:
 
 	exp : FOR ID . ASSIGN exp TO exp DO exp 
 
-	ASSIGN	shift 73
+	ASSIGN	shift 74
 
 
 	.	error
@@ -859,7 +862,7 @@ state 44:
 	GE	shift 23
 	AND	shift 22
 	OR	shift 21
-	DO	shift 74
+	DO	shift 75
 
 
 	.	error
@@ -894,7 +897,7 @@ state 45:
 	GE	shift 23
 	AND	shift 22
 	OR	shift 21
-	THEN	shift 75
+	THEN	shift 76
 
 
 	.	error
@@ -938,8 +941,8 @@ state 47:
 	opexp : exp . AND exp 
 	opexp : exp . OR exp 
 
-	SEMICOLON	shift 77
-	RPAREN	shift 76
+	SEMICOLON	shift 78
+	RPAREN	shift 77
 	PLUS	shift 32
 	MINUS	shift 31
 	TIMES	shift 30
@@ -971,10 +974,10 @@ state 49:
 	arrayRecordBuilder : ID LBRACE . record_param RBRACE 
 	arrayRecordBuilder : ID LBRACE . RBRACE 
 
-	ID	shift 80
-	RBRACE	shift 79
+	ID	shift 81
+	RBRACE	shift 80
 
-	record_param	goto 78
+	record_param	goto 79
 
 	.	error
 
@@ -996,17 +999,46 @@ state 50:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 81
+	exp	goto 82
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
 
 
 state 51:
+
+	funexp : ID LPAREN . RPAREN 
+	funexp : ID LPAREN . fun_param RPAREN 
+
+	ID	shift 17
+	INT	shift 16
+	STRING	shift 15
+	LPAREN	shift 14
+	RPAREN	shift 85
+	MINUS	shift 13
+	IF	shift 12
+	WHILE	shift 11
+	FOR	shift 10
+	LET	shift 9
+	BREAK	shift 8
+	NIL	shift 7
+
+	exp	goto 84
+	opexp	goto 5
+	lvalue	goto 4
+	lvalue_not_id	goto 3
+	funexp	goto 2
+	fun_param	goto 83
+	arrayRecordBuilder	goto 1
+
+	.	error
+
+
+state 52:
 
 	opexp : exp . PLUS exp 
 	opexp : exp . MINUS exp 
@@ -1022,7 +1054,7 @@ state 51:
 	opexp : exp . OR exp 
 	lvalue_not_id : lvalue_not_id LBRACK exp . RBRACK 
 
-	RBRACK	shift 82
+	RBRACK	shift 86
 	PLUS	shift 32
 	MINUS	shift 31
 	TIMES	shift 30
@@ -1040,7 +1072,7 @@ state 51:
 	.	error
 
 
-state 52:
+state 53:
 
 	exp : lvalue ASSIGN exp .  (reduce by rule 15)
 	opexp : exp . PLUS exp 
@@ -1073,7 +1105,7 @@ state 52:
 	.	reduce by rule 15
 
 
-state 53:
+state 54:
 
 	lvalue_not_id : lvalue DOT ID .  (reduce by rule 41)
 
@@ -1082,7 +1114,7 @@ state 53:
 	.	reduce by rule 41
 
 
-state 54:
+state 55:
 
 	opexp : exp . PLUS exp 
 	opexp : exp . MINUS exp 
@@ -1114,7 +1146,7 @@ state 54:
 	.	reduce by rule 30
 
 
-state 55:
+state 56:
 
 	opexp : exp . PLUS exp 
 	opexp : exp . MINUS exp 
@@ -1145,7 +1177,7 @@ state 55:
 	.	reduce by rule 29
 
 
-state 56:
+state 57:
 
 	opexp : exp . PLUS exp 
 	opexp : exp . MINUS exp 
@@ -1187,7 +1219,7 @@ state 56:
 	.	error
 
 
-state 57:
+state 58:
 
 	opexp : exp . PLUS exp 
 	opexp : exp . MINUS exp 
@@ -1229,7 +1261,7 @@ state 57:
 	.	error
 
 
-state 58:
+state 59:
 
 	opexp : exp . PLUS exp 
 	opexp : exp . MINUS exp 
@@ -1271,7 +1303,7 @@ state 58:
 	.	error
 
 
-state 59:
+state 60:
 
 	opexp : exp . PLUS exp 
 	opexp : exp . MINUS exp 
@@ -1313,7 +1345,7 @@ state 59:
 	.	error
 
 
-state 60:
+state 61:
 
 	opexp : exp . PLUS exp 
 	opexp : exp . MINUS exp 
@@ -1355,7 +1387,7 @@ state 60:
 	.	error
 
 
-state 61:
+state 62:
 
 	opexp : exp . PLUS exp 
 	opexp : exp . MINUS exp 
@@ -1397,7 +1429,7 @@ state 61:
 	.	error
 
 
-state 62:
+state 63:
 
 	opexp : exp . PLUS exp 
 	opexp : exp . MINUS exp 
@@ -1418,7 +1450,7 @@ state 62:
 	.	reduce by rule 22
 
 
-state 63:
+state 64:
 
 	opexp : exp . PLUS exp 
 	opexp : exp . MINUS exp 
@@ -1439,7 +1471,7 @@ state 63:
 	.	reduce by rule 21
 
 
-state 64:
+state 65:
 
 	opexp : exp . PLUS exp 
 	opexp : exp . MINUS exp 
@@ -1462,7 +1494,7 @@ state 64:
 	.	reduce by rule 20
 
 
-state 65:
+state 66:
 
 	opexp : exp . PLUS exp 
 	opexp : exp PLUS exp .  (reduce by rule 19)
@@ -1485,7 +1517,7 @@ state 65:
 	.	reduce by rule 19
 
 
-state 66:
+state 67:
 
 	tylist : tylist tydec .  (reduce by rule 54)
 
@@ -1494,7 +1526,7 @@ state 66:
 	.	reduce by rule 54
 
 
-state 67:
+state 68:
 
 	declist : declist dec .  (reduce by rule 48)
 
@@ -1503,7 +1535,7 @@ state 67:
 	.	reduce by rule 48
 
 
-state 68:
+state 69:
 
 	exp : LET declist IN . exp_seq END 
 	exp : LET declist IN . END 
@@ -1517,47 +1549,35 @@ state 68:
 	WHILE	shift 11
 	FOR	shift 10
 	LET	shift 9
-	END	shift 85
+	END	shift 89
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 84
-	exp_seq	goto 83
+	exp	goto 88
+	exp_seq	goto 87
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
 
 
-state 69:
-
-	funlist : funlist fundec .  (reduce by rule 63)
-
-
-
-	.	reduce by rule 63
-
-
 state 70:
 
-	tydec : TYPE ID . EQ ty 
-
-	EQ	shift 86
+	funlist : funlist fundec .  (reduce by rule 65)
 
 
-	.	error
+
+	.	reduce by rule 65
 
 
 state 71:
 
-	vardec : VAR ID . ASSIGN exp 
-	vardec : VAR ID . COLON ID ASSIGN exp 
+	tydec : TYPE ID . EQ ty 
 
-	COLON	shift 88
-	ASSIGN	shift 87
+	EQ	shift 90
 
 
 	.	error
@@ -1565,16 +1585,28 @@ state 71:
 
 state 72:
 
-	fundec : FUNCTION ID . LPAREN tyfields RPAREN COLON ID EQ exp 
-	fundec : FUNCTION ID . LPAREN tyfields RPAREN EQ exp 
+	vardec : VAR ID . ASSIGN exp 
+	vardec : VAR ID . COLON ID ASSIGN exp 
 
-	LPAREN	shift 89
+	COLON	shift 92
+	ASSIGN	shift 91
 
 
 	.	error
 
 
 state 73:
+
+	fundec : FUNCTION ID . LPAREN tyfields RPAREN COLON ID EQ exp 
+	fundec : FUNCTION ID . LPAREN tyfields RPAREN EQ exp 
+
+	LPAREN	shift 93
+
+
+	.	error
+
+
+state 74:
 
 	exp : FOR ID ASSIGN . exp TO exp DO exp 
 
@@ -1590,17 +1622,17 @@ state 73:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 90
+	exp	goto 94
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
 
 
-state 74:
+state 75:
 
 	exp : WHILE exp DO . exp 
 
@@ -1616,17 +1648,17 @@ state 74:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 91
+	exp	goto 95
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
 
 
-state 75:
+state 76:
 
 	exp : IF exp THEN . exp ELSE exp 
 	exp : IF exp THEN . exp 
@@ -1643,17 +1675,17 @@ state 75:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 92
+	exp	goto 96
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
 
 
-state 76:
+state 77:
 
 	exp : LPAREN exp RPAREN .  (reduce by rule 11)
 
@@ -1662,7 +1694,7 @@ state 76:
 	.	reduce by rule 11
 
 
-state 77:
+state 78:
 
 	exp : LPAREN exp SEMICOLON . exp_seq RPAREN 
 
@@ -1678,28 +1710,28 @@ state 77:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 84
-	exp_seq	goto 93
+	exp	goto 88
+	exp_seq	goto 97
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
 
 
-state 78:
+state 79:
 
 	arrayRecordBuilder : ID LBRACE record_param . RBRACE 
 
-	RBRACE	shift 94
+	RBRACE	shift 98
 
 
 	.	error
 
 
-state 79:
+state 80:
 
 	arrayRecordBuilder : ID LBRACE RBRACE .  (reduce by rule 34)
 
@@ -1708,18 +1740,18 @@ state 79:
 	.	reduce by rule 34
 
 
-state 80:
+state 81:
 
 	record_param : ID . EQ exp 
 	record_param : ID . EQ exp COMMA record_param 
 
-	EQ	shift 95
+	EQ	shift 99
 
 
 	.	error
 
 
-state 81:
+state 82:
 
 	opexp : exp . PLUS exp 
 	opexp : exp . MINUS exp 
@@ -1736,7 +1768,7 @@ state 81:
 	lvalue_not_id : ID LBRACK exp . RBRACK 
 	arrayRecordBuilder : ID LBRACK exp . RBRACK OF exp 
 
-	RBRACK	shift 96
+	RBRACK	shift 100
 	PLUS	shift 32
 	MINUS	shift 31
 	TIMES	shift 30
@@ -1754,7 +1786,61 @@ state 81:
 	.	error
 
 
-state 82:
+state 83:
+
+	funexp : ID LPAREN fun_param . RPAREN 
+
+	RPAREN	shift 101
+
+
+	.	error
+
+
+state 84:
+
+	opexp : exp . PLUS exp 
+	opexp : exp . MINUS exp 
+	opexp : exp . TIMES exp 
+	opexp : exp . DIVIDE exp 
+	opexp : exp . EQ exp 
+	opexp : exp . NEQ exp 
+	opexp : exp . LT exp 
+	opexp : exp . LE exp 
+	opexp : exp . GT exp 
+	opexp : exp . GE exp 
+	opexp : exp . AND exp 
+	opexp : exp . OR exp 
+	fun_param : exp .  (reduce by rule 66)
+	fun_param : exp . COMMA fun_param 
+
+	COMMA	shift 102
+	PLUS	shift 32
+	MINUS	shift 31
+	TIMES	shift 30
+	DIVIDE	shift 29
+	EQ	shift 28
+	NEQ	shift 27
+	LT	shift 26
+	LE	shift 25
+	GT	shift 24
+	GE	shift 23
+	AND	shift 22
+	OR	shift 21
+
+
+	.	reduce by rule 66
+
+
+state 85:
+
+	funexp : ID LPAREN RPAREN .  (reduce by rule 60)
+
+
+
+	.	reduce by rule 60
+
+
+state 86:
 
 	lvalue_not_id : lvalue_not_id LBRACK exp RBRACK .  (reduce by rule 42)
 
@@ -1763,19 +1849,19 @@ state 82:
 	.	reduce by rule 42
 
 
-state 83:
+state 87:
 
 	exp : LET declist IN exp_seq . END 
 	exp_seq : exp_seq . SEMICOLON exp 
 
-	SEMICOLON	shift 98
-	END	shift 97
+	SEMICOLON	shift 104
+	END	shift 103
 
 
 	.	error
 
 
-state 84:
+state 88:
 
 	exp_seq : exp .  (reduce by rule 37)
 	opexp : exp . PLUS exp 
@@ -1808,7 +1894,7 @@ state 84:
 	.	reduce by rule 37
 
 
-state 85:
+state 89:
 
 	exp : LET declist IN END .  (reduce by rule 10)
 
@@ -1817,20 +1903,20 @@ state 85:
 	.	reduce by rule 10
 
 
-state 86:
+state 90:
 
 	tydec : TYPE ID EQ . ty 
 
-	ID	shift 102
-	LBRACE	shift 101
-	ARRAY	shift 100
+	ID	shift 108
+	LBRACE	shift 107
+	ARRAY	shift 106
 
-	ty	goto 99
+	ty	goto 105
 
 	.	error
 
 
-state 87:
+state 91:
 
 	vardec : VAR ID ASSIGN . exp 
 
@@ -1846,39 +1932,39 @@ state 87:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 103
+	exp	goto 109
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
 
 
-state 88:
+state 92:
 
 	vardec : VAR ID COLON . ID ASSIGN exp 
 
-	ID	shift 104
+	ID	shift 110
 
 
 	.	error
 
 
-state 89:
+state 93:
 
 	fundec : FUNCTION ID LPAREN . tyfields RPAREN COLON ID EQ exp 
 	fundec : FUNCTION ID LPAREN . tyfields RPAREN EQ exp 
 
-	ID	shift 106
+	ID	shift 112
 
-	tyfields	goto 105
+	tyfields	goto 111
 
 	.	reduce by rule 55
 
 
-state 90:
+state 94:
 
 	exp : FOR ID ASSIGN exp . TO exp DO exp 
 	opexp : exp . PLUS exp 
@@ -1906,13 +1992,13 @@ state 90:
 	GE	shift 23
 	AND	shift 22
 	OR	shift 21
-	TO	shift 107
+	TO	shift 113
 
 
 	.	error
 
 
-state 91:
+state 95:
 
 	exp : WHILE exp DO exp .  (reduce by rule 6)
 	opexp : exp . PLUS exp 
@@ -1945,7 +2031,7 @@ state 91:
 	.	reduce by rule 6
 
 
-state 92:
+state 96:
 
 	exp : IF exp THEN exp . ELSE exp 
 	exp : IF exp THEN exp .  (reduce by rule 4)
@@ -1974,25 +2060,25 @@ state 92:
 	GE	shift 23
 	AND	shift 22
 	OR	shift 21
-	ELSE	shift 108
+	ELSE	shift 114
 
 
 	.	reduce by rule 4
 
 
-state 93:
+state 97:
 
 	exp : LPAREN exp SEMICOLON exp_seq . RPAREN 
 	exp_seq : exp_seq . SEMICOLON exp 
 
-	SEMICOLON	shift 98
-	RPAREN	shift 109
+	SEMICOLON	shift 104
+	RPAREN	shift 115
 
 
 	.	error
 
 
-state 94:
+state 98:
 
 	arrayRecordBuilder : ID LBRACE record_param RBRACE .  (reduce by rule 33)
 
@@ -2001,7 +2087,7 @@ state 94:
 	.	reduce by rule 33
 
 
-state 95:
+state 99:
 
 	record_param : ID EQ . exp 
 	record_param : ID EQ . exp COMMA record_param 
@@ -2018,28 +2104,64 @@ state 95:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 110
+	exp	goto 116
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
 
 
-state 96:
+state 100:
 
 	lvalue_not_id : ID LBRACK exp RBRACK .  (reduce by rule 43)
 	arrayRecordBuilder : ID LBRACK exp RBRACK . OF exp 
 
-	OF	shift 111
+	OF	shift 117
 
 
 	.	reduce by rule 43
 
 
-state 97:
+state 101:
+
+	funexp : ID LPAREN fun_param RPAREN .  (reduce by rule 61)
+
+
+
+	.	reduce by rule 61
+
+
+state 102:
+
+	fun_param : exp COMMA . fun_param 
+
+	ID	shift 17
+	INT	shift 16
+	STRING	shift 15
+	LPAREN	shift 14
+	MINUS	shift 13
+	IF	shift 12
+	WHILE	shift 11
+	FOR	shift 10
+	LET	shift 9
+	BREAK	shift 8
+	NIL	shift 7
+
+	exp	goto 84
+	opexp	goto 5
+	lvalue	goto 4
+	lvalue_not_id	goto 3
+	funexp	goto 2
+	fun_param	goto 118
+	arrayRecordBuilder	goto 1
+
+	.	error
+
+
+state 103:
 
 	exp : LET declist IN exp_seq END .  (reduce by rule 9)
 
@@ -2048,7 +2170,7 @@ state 97:
 	.	reduce by rule 9
 
 
-state 98:
+state 104:
 
 	exp_seq : exp_seq SEMICOLON . exp 
 
@@ -2064,17 +2186,17 @@ state 98:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 112
+	exp	goto 119
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
 
 
-state 99:
+state 105:
 
 	tydec : TYPE ID EQ ty .  (reduce by rule 52)
 
@@ -2083,28 +2205,28 @@ state 99:
 	.	reduce by rule 52
 
 
-state 100:
+state 106:
 
 	ty : ARRAY . OF ID 
 
-	OF	shift 113
+	OF	shift 120
 
 
 	.	error
 
 
-state 101:
+state 107:
 
 	ty : LBRACE . tyfields RBRACE 
 
-	ID	shift 106
+	ID	shift 112
 
-	tyfields	goto 114
+	tyfields	goto 121
 
 	.	reduce by rule 55
 
 
-state 102:
+state 108:
 
 	ty : ID .  (reduce by rule 49)
 
@@ -2113,7 +2235,7 @@ state 102:
 	.	reduce by rule 49
 
 
-state 103:
+state 109:
 
 	opexp : exp . PLUS exp 
 	opexp : exp . MINUS exp 
@@ -2146,39 +2268,39 @@ state 103:
 	.	reduce by rule 58
 
 
-state 104:
+state 110:
 
 	vardec : VAR ID COLON ID . ASSIGN exp 
 
-	ASSIGN	shift 115
+	ASSIGN	shift 122
 
 
 	.	error
 
 
-state 105:
+state 111:
 
 	fundec : FUNCTION ID LPAREN tyfields . RPAREN COLON ID EQ exp 
 	fundec : FUNCTION ID LPAREN tyfields . RPAREN EQ exp 
 
-	RPAREN	shift 116
+	RPAREN	shift 123
 
 
 	.	error
 
 
-state 106:
+state 112:
 
 	tyfields : ID . COLON ID 
 	tyfields : ID . COLON ID COMMA tyfields 
 
-	COLON	shift 117
+	COLON	shift 124
 
 
 	.	error
 
 
-state 107:
+state 113:
 
 	exp : FOR ID ASSIGN exp TO . exp DO exp 
 
@@ -2194,17 +2316,17 @@ state 107:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 118
+	exp	goto 125
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
 
 
-state 108:
+state 114:
 
 	exp : IF exp THEN exp ELSE . exp 
 
@@ -2220,17 +2342,17 @@ state 108:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 119
+	exp	goto 126
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
 
 
-state 109:
+state 115:
 
 	exp : LPAREN exp SEMICOLON exp_seq RPAREN .  (reduce by rule 13)
 
@@ -2239,7 +2361,7 @@ state 109:
 	.	reduce by rule 13
 
 
-state 110:
+state 116:
 
 	opexp : exp . PLUS exp 
 	opexp : exp . MINUS exp 
@@ -2256,7 +2378,7 @@ state 110:
 	record_param : ID EQ exp .  (reduce by rule 35)
 	record_param : ID EQ exp . COMMA record_param 
 
-	COMMA	shift 120
+	COMMA	shift 127
 	PLUS	shift 32
 	MINUS	shift 31
 	TIMES	shift 30
@@ -2274,7 +2396,7 @@ state 110:
 	.	reduce by rule 35
 
 
-state 111:
+state 117:
 
 	arrayRecordBuilder : ID LBRACK exp RBRACK OF . exp 
 
@@ -2290,17 +2412,26 @@ state 111:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 121
+	exp	goto 128
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
 
 
-state 112:
+state 118:
+
+	fun_param : exp COMMA fun_param .  (reduce by rule 67)
+
+
+
+	.	reduce by rule 67
+
+
+state 119:
 
 	exp_seq : exp_seq SEMICOLON exp .  (reduce by rule 38)
 	opexp : exp . PLUS exp 
@@ -2333,27 +2464,27 @@ state 112:
 	.	reduce by rule 38
 
 
-state 113:
+state 120:
 
 	ty : ARRAY OF . ID 
 
-	ID	shift 122
+	ID	shift 129
 
 
 	.	error
 
 
-state 114:
+state 121:
 
 	ty : LBRACE tyfields . RBRACE 
 
-	RBRACE	shift 123
+	RBRACE	shift 130
 
 
 	.	error
 
 
-state 115:
+state 122:
 
 	vardec : VAR ID COLON ID ASSIGN . exp 
 
@@ -2369,40 +2500,40 @@ state 115:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 124
+	exp	goto 131
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
 
 
-state 116:
+state 123:
 
 	fundec : FUNCTION ID LPAREN tyfields RPAREN . COLON ID EQ exp 
 	fundec : FUNCTION ID LPAREN tyfields RPAREN . EQ exp 
 
-	COLON	shift 126
-	EQ	shift 125
+	COLON	shift 133
+	EQ	shift 132
 
 
 	.	error
 
 
-state 117:
+state 124:
 
 	tyfields : ID COLON . ID 
 	tyfields : ID COLON . ID COMMA tyfields 
 
-	ID	shift 127
+	ID	shift 134
 
 
 	.	error
 
 
-state 118:
+state 125:
 
 	exp : FOR ID ASSIGN exp TO exp . DO exp 
 	opexp : exp . PLUS exp 
@@ -2430,13 +2561,13 @@ state 118:
 	GE	shift 23
 	AND	shift 22
 	OR	shift 21
-	DO	shift 128
+	DO	shift 135
 
 
 	.	error
 
 
-state 119:
+state 126:
 
 	exp : IF exp THEN exp ELSE exp .  (reduce by rule 3)
 	opexp : exp . PLUS exp 
@@ -2469,18 +2600,18 @@ state 119:
 	.	reduce by rule 3
 
 
-state 120:
+state 127:
 
 	record_param : ID EQ exp COMMA . record_param 
 
-	ID	shift 80
+	ID	shift 81
 
-	record_param	goto 129
+	record_param	goto 136
 
 	.	error
 
 
-state 121:
+state 128:
 
 	opexp : exp . PLUS exp 
 	opexp : exp . MINUS exp 
@@ -2513,7 +2644,7 @@ state 121:
 	.	reduce by rule 32
 
 
-state 122:
+state 129:
 
 	ty : ARRAY OF ID .  (reduce by rule 51)
 
@@ -2522,7 +2653,7 @@ state 122:
 	.	reduce by rule 51
 
 
-state 123:
+state 130:
 
 	ty : LBRACE tyfields RBRACE .  (reduce by rule 50)
 
@@ -2531,7 +2662,7 @@ state 123:
 	.	reduce by rule 50
 
 
-state 124:
+state 131:
 
 	opexp : exp . PLUS exp 
 	opexp : exp . MINUS exp 
@@ -2564,7 +2695,7 @@ state 124:
 	.	reduce by rule 59
 
 
-state 125:
+state 132:
 
 	fundec : FUNCTION ID LPAREN tyfields RPAREN EQ . exp 
 
@@ -2580,38 +2711,38 @@ state 125:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 130
+	exp	goto 137
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
 
 
-state 126:
+state 133:
 
 	fundec : FUNCTION ID LPAREN tyfields RPAREN COLON . ID EQ exp 
 
-	ID	shift 131
+	ID	shift 138
 
 
 	.	error
 
 
-state 127:
+state 134:
 
 	tyfields : ID COLON ID .  (reduce by rule 56)
 	tyfields : ID COLON ID . COMMA tyfields 
 
-	COMMA	shift 132
+	COMMA	shift 139
 
 
 	.	reduce by rule 56
 
 
-state 128:
+state 135:
 
 	exp : FOR ID ASSIGN exp TO exp DO . exp 
 
@@ -2627,17 +2758,17 @@ state 128:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 133
+	exp	goto 140
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
 
 
-state 129:
+state 136:
 
 	record_param : ID EQ exp COMMA record_param .  (reduce by rule 36)
 
@@ -2646,7 +2777,7 @@ state 129:
 	.	reduce by rule 36
 
 
-state 130:
+state 137:
 
 	opexp : exp . PLUS exp 
 	opexp : exp . MINUS exp 
@@ -2660,7 +2791,7 @@ state 130:
 	opexp : exp . GE exp 
 	opexp : exp . AND exp 
 	opexp : exp . OR exp 
-	fundec : FUNCTION ID LPAREN tyfields RPAREN EQ exp .  (reduce by rule 61)
+	fundec : FUNCTION ID LPAREN tyfields RPAREN EQ exp .  (reduce by rule 63)
 
 	PLUS	shift 32
 	MINUS	shift 31
@@ -2676,31 +2807,31 @@ state 130:
 	OR	shift 21
 
 
-	.	reduce by rule 61
+	.	reduce by rule 63
 
 
-state 131:
+state 138:
 
 	fundec : FUNCTION ID LPAREN tyfields RPAREN COLON ID . EQ exp 
 
-	EQ	shift 134
+	EQ	shift 141
 
 
 	.	error
 
 
-state 132:
+state 139:
 
 	tyfields : ID COLON ID COMMA . tyfields 
 
-	ID	shift 106
+	ID	shift 112
 
-	tyfields	goto 135
+	tyfields	goto 142
 
 	.	reduce by rule 55
 
 
-state 133:
+state 140:
 
 	exp : FOR ID ASSIGN exp TO exp DO exp .  (reduce by rule 7)
 	opexp : exp . PLUS exp 
@@ -2733,7 +2864,7 @@ state 133:
 	.	reduce by rule 7
 
 
-state 134:
+state 141:
 
 	fundec : FUNCTION ID LPAREN tyfields RPAREN COLON ID EQ . exp 
 
@@ -2749,17 +2880,17 @@ state 134:
 	BREAK	shift 8
 	NIL	shift 7
 
-	exp	goto 136
+	exp	goto 143
 	opexp	goto 5
 	lvalue	goto 4
 	lvalue_not_id	goto 3
-	funExp	goto 2
+	funexp	goto 2
 	arrayRecordBuilder	goto 1
 
 	.	error
 
 
-state 135:
+state 142:
 
 	tyfields : ID COLON ID COMMA tyfields .  (reduce by rule 57)
 
@@ -2768,7 +2899,7 @@ state 135:
 	.	reduce by rule 57
 
 
-state 136:
+state 143:
 
 	opexp : exp . PLUS exp 
 	opexp : exp . MINUS exp 
@@ -2782,7 +2913,7 @@ state 136:
 	opexp : exp . GE exp 
 	opexp : exp . AND exp 
 	opexp : exp . OR exp 
-	fundec : FUNCTION ID LPAREN tyfields RPAREN COLON ID EQ exp .  (reduce by rule 60)
+	fundec : FUNCTION ID LPAREN tyfields RPAREN COLON ID EQ exp .  (reduce by rule 62)
 
 	PLUS	shift 32
 	MINUS	shift 31
@@ -2798,10 +2929,10 @@ state 136:
 	OR	shift 21
 
 
-	.	reduce by rule 60
+	.	reduce by rule 62
 
 
-state 137:
+state 144:
 
 
 	EOF	accept
@@ -2809,5 +2940,5 @@ state 137:
 
 	.	error
 
-529 of 1021 action table entries left after compaction
-234 goto table entries
+556 of 1066 action table entries left after compaction
+248 goto table entries

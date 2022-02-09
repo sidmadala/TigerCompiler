@@ -21,8 +21,8 @@ structure A = Absyn
        | lvalue_not_id of A.var
        | fundec of A.fundec
        | funlist of A.fundec list
-       | funExp of A.exp
-       | funArgs of A.exp list
+       | funexp of A.exp
+       | fun_param of A.exp list
        | dec of A.dec
        | declist of A.dec list
        | vardec of A.dec
@@ -70,15 +70,15 @@ program : exp				                                   (exp)
 
 (* general exp *)
 exp:     NIL		                                                 (A.NilExp)
-       | STRING                                                       (A.StringExp(exp, expleft))
+       | STRING                                                       (A.StringExp(STRING, STRINGleft))
        (* conditional *)
-       | IF exp THEN exp ELSE exp                                     (A.IfExp {test = exp1, then' = exp2, else' = SOME exp3, pos: exp1left}) 
-       | IF exp THEN exp                                              (A.IfExp {test = exp1, then' = exp2, else' = NONE exp3, pos: exp1left})
+       | IF exp THEN exp ELSE exp                                     (A.IfExp {test = exp1, then' = exp2, else' = SOME(exp3), pos = exp1left}) 
+       | IF exp THEN exp                                              (A.IfExp {test = exp1, then' = exp2, else' = NONE, pos = exp1left})
        (* math *)
        | opexp                                                        (opexp) 
        (* loops *)
        | WHILE exp DO exp                                             (A.WhileExp {test = exp1, body = exp2, pos = exp1left})
-       | FOR ID ASSIGN exp TO exp DO exp                              (A.ForExp {var = A.symbol(ID), escape = ref true, lo = exp1, hi = exp2, body = exp3, pos: FORleft})
+       | FOR ID ASSIGN exp TO exp DO exp                              (A.ForExp {var = Symbol.symbol(ID), escape = ref true, lo = exp1, hi = exp2, body = exp3, pos = FORleft})
        | BREAK                                                        (A.BreakExp(BREAKleft))
        (* let decs list with all types of declarations + mutually recursive list stuff *)
        | LET declist IN exp_seq END                                   (A.LetExp({decs = declist, body = A.SeqExp(exp_seq), pos = LETleft}))
@@ -93,10 +93,10 @@ exp:     NIL		                                                 (A.NilExp)
        (* arrays and records *)
        | arrayRecordBuilder                                           (arrayRecordBuilder)
        (* functions *)
-       | funExp                                                      (funExp)
+       | funexp                                                      (funexp)
 
 (* Arithmetic *)
-opexp : MINUS exp %prec UMINUS                                        (A.OpExp {left = A.IntExp(0), oper = A.MinusOp, right = exp2, pos = exp1left})
+opexp : MINUS exp %prec UMINUS                                        (A.OpExp {left = A.IntExp(0), oper = A.MinusOp, right = exp1, pos = exp1left})
        | exp PLUS exp                                                 (A.OpExp {left = exp1, oper = A.PlusOp, right = exp2, pos = exp1left})             
        | exp MINUS exp                                                (A.OpExp {left = exp1, oper = A.MinusOp, right = exp2, pos = exp1left})            
        | exp TIMES exp                                                (A.OpExp {left = exp1, oper = A.TimesOp, right = exp2, pos = exp1left})           
@@ -126,8 +126,8 @@ record_param : ID EQ exp				                     ([(Symbol.symbol(ID), exp, IDle
        | ID EQ exp COMMA record_param		                     ((Symbol.symbol(ID), exp, IDleft) :: record_param)
 
 (* sequential expressions *)
-exp_seq : exp                                                         ([exp, expleft])
-        | exp_seq SEMICOLON exp                                        (exp_seq @ [(exp, expleft)])
+exp_seq : exp                                                         ([(exp, expleft)])
+        | exp_seq SEMICOLON exp                                       (exp_seq @ [(exp, expleft)])
 
 (* access *)
 lvalue: ID                                                            (A.SimpleVar(Symbol.symbol(ID), IDleft))
@@ -151,13 +151,13 @@ ty : ID                                                               (A.NameTy(
    | LBRACE tyfields RBRACE                                           (A.RecordTy(tyfields))
    | ARRAY OF ID                                                      (A.ArrayTy(Symbol.symbol(ID), ARRAYleft))
 
-tydec : TYPE ID EQ ty                                                 (A.TypeDec({name = Symbol.symbol(ID), ty = ty, pos = TYPEleft})) (* kinda sus 馨 *)
+tydec : TYPE ID EQ ty                                                 ({name = Symbol.symbol(ID), ty = ty, pos = TYPEleft}) (* kinda sus 馨 *)
 
 tylist : tydec                                                        ([tydec])
        | tylist tydec                                                 (tylist @ [tydec])
 
 tyfields :                                                            ([])
-         | ID COLON ID                                                ({name = Symbol.symbol(ID1), escape = ref true, typ = Symbol.symbol(ID2), pos = ID1left} : A.field)
+         | ID COLON ID                                                ([{name = Symbol.symbol(ID1), escape = ref true, typ = Symbol.symbol(ID2), pos = ID1left} : A.field])
          | ID COLON ID COMMA tyfields                                 (({name = Symbol.symbol(ID1), escape = ref true, typ = Symbol.symbol(ID2), pos = ID1left} : A.field) :: tyfields)
 
 (* variables *)
@@ -165,10 +165,16 @@ vardec : VAR ID ASSIGN exp                                            (A.VarDec(
        | VAR ID COLON ID ASSIGN exp                                   (A.VarDec({name = Symbol.symbol(ID1), escape = ref true, typ = SOME((Symbol.symbol(ID2), ID2left)), init = exp, pos = VARleft}))
 
 (* functions *)
-fundec : FUNCTION ID LPAREN tyfields RPAREN COLON ID EQ exp           ({name = Symbol.symbol(ID1), params = tyfields, result = SOME((Symbol.symbol(ID2), ID2left)), body = exp, pos = FUNleft}: A.fundec) 
-       | FUNCTION ID LPAREN tyfields RPAREN EQ exp                    ({name = Symbol.symbol(ID1), params = tyfields, result = NONE, body = exp, pos = FUNleft}: A.fundec) 
-       (* | FUNCTION ID LPAREN RPAREN COLON ID EQ exp                    ({name = Symbol.symbol(ID), params = [], ret = Symbol.symbol(ID), body = exp, pos = FUNleft}) 
+funexp: ID LPAREN RPAREN			                            (A.CallExp({func = Symbol.symbol(ID), args = [], pos = IDleft}))
+       | ID LPAREN fun_param RPAREN	                            (A.CallExp({func = Symbol.symbol(ID), args = fun_param, pos = IDleft}))
+
+fundec : FUNCTION ID LPAREN tyfields RPAREN COLON ID EQ exp           ({name = Symbol.symbol(ID1), params = tyfields, result = SOME((Symbol.symbol(ID2), ID2left)), body = exp, pos = FUNCTIONleft}: A.fundec) 
+       | FUNCTION ID LPAREN tyfields RPAREN EQ exp                    ({name = Symbol.symbol(ID1), params = tyfields, result = NONE, body = exp, pos = FUNCTIONleft}: A.fundec) 
+       (* | FUNCTION ID LPAREN RPAREN COLON ID EQ exp                    ({name = Symbol.symbol(ID), params = [], ret = Symbol.symbol(ID), body = exp, pos = FUNCTIONleft}) 
        | FUNCTION ID LPAREN RPAREN EQ exp                             () *)
 
 funlist : fundec                                                      ([fundec])
         | funlist fundec                                              (funlist @ [fundec])
+
+fun_param: exp					                     ([exp])
+          | exp COMMA fun_param	                                   (exp :: fun_param)
