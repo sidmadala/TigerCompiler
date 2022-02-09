@@ -1,0 +1,3 @@
+/* error : nothing inside then to end */
+
+if (5>4) then else  " "
