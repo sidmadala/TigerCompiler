@@ -93,7 +93,7 @@ exp:     NIL		                                                 (A.NilExp)
        (* arrays and records *)
        | arrayRecordBuilder                                           (arrayRecordBuilder)
        (* functions *)
-       | funexp                                                      (funexp)
+       | funexp                                                       (funexp)
 
 (* Arithmetic *)
 opexp : MINUS exp %prec UMINUS                                        (A.OpExp {left = A.IntExp(0), oper = A.MinusOp, right = exp1, pos = exp1left})
@@ -168,6 +168,9 @@ vardec : VAR ID ASSIGN exp                                            (A.VarDec(
 funexp: ID LPAREN RPAREN			                            (A.CallExp({func = Symbol.symbol(ID), args = [], pos = IDleft}))
        | ID LPAREN fun_param RPAREN	                            (A.CallExp({func = Symbol.symbol(ID), args = fun_param, pos = IDleft}))
 
+fun_param: exp					                     ([exp])
+          | exp COMMA fun_param	                                   (exp :: fun_param)
+
 fundec : FUNCTION ID LPAREN tyfields RPAREN COLON ID EQ exp           ({name = Symbol.symbol(ID1), params = tyfields, result = SOME((Symbol.symbol(ID2), ID2left)), body = exp, pos = FUNCTIONleft}: A.fundec) 
        | FUNCTION ID LPAREN tyfields RPAREN EQ exp                    ({name = Symbol.symbol(ID1), params = tyfields, result = NONE, body = exp, pos = FUNCTIONleft}: A.fundec) 
        (* | FUNCTION ID LPAREN RPAREN COLON ID EQ exp                    ({name = Symbol.symbol(ID), params = [], ret = Symbol.symbol(ID), body = exp, pos = FUNCTIONleft}) 
@@ -175,6 +178,3 @@ fundec : FUNCTION ID LPAREN tyfields RPAREN COLON ID EQ exp           ({name = S
 
 funlist : fundec                                                      ([fundec])
         | funlist fundec                                              (funlist @ [fundec])
-
-fun_param: exp					                     ([exp])
-          | exp COMMA fun_param	                                   (exp :: fun_param)
