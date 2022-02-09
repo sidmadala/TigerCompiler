@@ -50,47 +50,18 @@ state 2:
 
 state 3:
 
-	exp : lvalue_not_id .  (reduce by rule 14)
 	lvalue : lvalue_not_id .  (reduce by rule 40)
 	lvalue_not_id : lvalue_not_id . LBRACK exp RBRACK 
 
-	EOF	reduce by rule 14
-	COMMA	reduce by rule 14
-	SEMICOLON	reduce by rule 14
-	RPAREN	reduce by rule 14
 	LBRACK	shift 18
-	RBRACK	reduce by rule 14
-	RBRACE	reduce by rule 14
-	DOT	reduce by rule 40
-	PLUS	reduce by rule 14
-	MINUS	reduce by rule 14
-	TIMES	reduce by rule 14
-	DIVIDE	reduce by rule 14
-	EQ	reduce by rule 14
-	NEQ	reduce by rule 14
-	LT	reduce by rule 14
-	LE	reduce by rule 14
-	GT	reduce by rule 14
-	GE	reduce by rule 14
-	AND	reduce by rule 14
-	OR	reduce by rule 14
-	ASSIGN	reduce by rule 40
-	THEN	reduce by rule 14
-	ELSE	reduce by rule 14
-	TO	reduce by rule 14
-	DO	reduce by rule 14
-	IN	reduce by rule 14
-	END	reduce by rule 14
-	FUNCTION	reduce by rule 14
-	VAR	reduce by rule 14
-	TYPE	reduce by rule 14
 
 
-	.	error
+	.	reduce by rule 40
 
 
 state 4:
 
+	exp : lvalue .  (reduce by rule 14)
 	exp : lvalue . ASSIGN exp 
 	lvalue_not_id : lvalue . DOT ID 
 
@@ -98,7 +69,7 @@ state 4:
 	ASSIGN	shift 19
 
 
-	.	error
+	.	reduce by rule 14
 
 
 state 5:
@@ -2940,5 +2911,5 @@ state 144:
 
 	.	error
 
-556 of 1066 action table entries left after compaction
+527 of 1037 action table entries left after compaction
 248 goto table entries
