@@ -18,6 +18,7 @@ structure A = Absyn
        | exp_seq of (A.exp * A.pos) list
        | opexp of A.exp
        | lvalue of A.var
+       | lvalue_not_id of A.var
        | fundec of A.fundec
        | funlist of A.fundec list
        | funExp of A.exp
@@ -87,7 +88,7 @@ exp:     NIL		                                                 (A.NilExp)
        | LPAREN RPAREN                                                (A.SeqExp([]))
        | LPAREN exp SEMICOLON exp_seq RPAREN                          (A.SeqExp((exp, expleft) :: exp_seq))
        (* lvalue exp and assignment *)
-       | lvalue                                                       (A.VarExp(lvalue))
+       | lvalue_not_id                                                (A.VarExp(lvalue_not_id))
        | lvalue ASSIGN exp                                            (A.AssignExp{var = lvalue, exp = exp, pos = lvalueleft})
        (* arrays and records *)
        | arrayRecordBuilder                                           (arrayRecordBuilder)
@@ -130,9 +131,12 @@ exp_seq : exp                                                         ([exp, exp
 
 (* access *)
 lvalue: ID                                                            (A.SimpleVar(Symbol.symbol(ID), IDleft))
-       | lvalue DOT ID                                                (A.FieldVar(lvalue, Symbol.symbol(ID), lvalueleft))
-       | lvalue LBRACK exp RBRACK                                     (A.SubscriptVar(lvalue, exp, lvalueleft))
-       | ID LBRACK exp RBRACK                                         (A.SubscriptVar(A.SimpleVar(Symbol.symbol(ID), IDleft), exp, IDleft))
+       | lvalue_not_id                                                (lvalue_not_id)  
+
+(* workaround for shift-reduce conflict via ID vs. ID LRACK*)
+lvalue_not_id: lvalue DOT ID                                          (A.FieldVar(lvalue, Symbol.symbol(ID), lvalueleft))
+              | lvalue_not_id LBRACK exp RBRACK                       (A.SubscriptVar(lvalue_not_id, exp, lvalue_not_idleft))
+              | ID LBRACK exp RBRACK                                  (A.SubscriptVar(A.SimpleVar(Symbol.symbol(ID), IDleft), exp, IDleft))
 
 (* declarations *)
 dec : funlist                                                         (A.FunctionDec(funlist))
