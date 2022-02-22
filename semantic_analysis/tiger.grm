@@ -145,6 +145,7 @@ dec : funlist                                                         (A.Functio
 
 declist : dec                                                         ([dec])
         | declist dec                                                 (declist @ [dec])
+        |                                                             ([])
 
 (* types *)
 ty : ID                                                               (A.NameTy(Symbol.symbol(ID), IDleft))
