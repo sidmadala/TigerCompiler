@@ -11,6 +11,7 @@ type tenv = E.ty S.table
 
 type expty = {exp: Translate.exp, ty: Types.ty}
 
+(* helper functions *)
 fun getType(SOME(ty)) = ty
     | getType(NONE) = T.BOTTOM 
 
@@ -22,6 +23,7 @@ fun actualTy ty =
 fun checkInt ({exp=_, ty=T.INT}, pos) = ()
     | checkInt ({exp=_, ty=_ }, pos) = Err.error pos "error: not an integer"
 
+(* beginning of main transExp function *)
 fun transExp(venv, tenv, exp) =
     let
       fun trexp(A.NilExp) = {exp = (), ty = Types.NIL}
@@ -38,27 +40,30 @@ fun transExp(venv, tenv, exp) =
             | SOME(Env.FunEntry({formals, result})) => {exp=(), ty=result} 
             | NONE => (Err.error pos ("error: variable not declared" ^ S.name sym); {exp=(), ty=T.BOTTOM})
         )
-        (* | trvar(A.FieldVar(var, sym, pos)) = 
-            (case trvar of 
-                {exp=(), ty=T.RECORD(recordList,unique)} =>
+        | trvar(A.FieldVar(var, sym, pos)) = 
+            (case trvar var of 
+                {exp=(), ty=T.RECORD(fieldTys, unique)} =>
+                    let
+                      val fields = fieldTys()
+                      (* fun getFieldType () = TODO: ... this *)
+                    in
+                      {exp=(), ty=getFieldType(fields, sym, pos)}
+                    end
                 | {exp=_, ty=_} => (Err.error pos ("error: not a record"); {exp=(), ty=T.BOTTOM})
-            ) *)
+            )
         | trvar(A.SubscriptVar(var, exp, pos)) =
-            (case trvar var of
+            case trvar var of
                 {exp=(), ty=T.ARRAY(arrTy, unique)} => (checkInt(trexp exp, pos); {exp=(), ty=actualTy arrTy})
                 | {exp=_, ty=_} => (Err.error pos ("error: not an array"); {exp=(), ty=T.BOTTOM})
-            )
-)
-
+            
     in
       trexp(exp)
     end
   
-fun transVar() = 
 fun transDec() =
 fun transTy() = 
 
+(* transProg needs to take in expression to translate, run transExp, and return unit *)
 fun transProg(exp_to_translate : A.exp) = 
     (transExp (E.base_venv, E.base_tenv, exp_to_translate); ())
-
 end
