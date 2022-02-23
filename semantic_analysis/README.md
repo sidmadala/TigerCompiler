@@ -24,23 +24,23 @@ vars:
 exps:
 - [x] varexp, nilexp, intexp, stringexp
 - [x] opexp
-- [] callexp
-- [] recordexp
+- [ ] callexp
+- [ ] recordexp
 - [x] seqexp
-- [] assignexp
-- [] ifexp
-- [] whileexp
-- [] forexp
-- [] breakexp
-- [] letexp
-- [] arrayexp
+- [x] assignexp
+- [x] ifexp
+- [x] whileexp
+- [x] forexp
+- [x] breakexp
+- [x] letexp
+- [ ] arrayexp
 
 decs:
-- [] fundec
-- [] vardec
-- [] typedec
+- [ ] fundec
+- [ ] vardec
+- [ ] typedec
 
 types:
-- [] namety
-- [] recordty
-- [] arrayty
+- [ ] namety
+- [ ] recordty
+- [ ] arrayty
