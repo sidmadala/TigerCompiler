@@ -12,6 +12,8 @@ type tenv = E.ty S.table
 
 type expty = {exp: Translate.exp, ty: T.ty}
 
+val loopLevel = ref 0
+
 (* helper functions *)
 fun getType(SOME(ty)) = ty
     | getType(NONE) = T.BOTTOM 
@@ -39,6 +41,9 @@ fun checkTyEq({exp, ty = T.INT}, {exp, ty = T.INT}, pos) = ()
   | checkTyEq({exp, ty = T.ARRAY(_, u1)}, {exp, ty = T.ARRAY(_, u2)}, pos) =
     if u1 = u2 then () else Err.error pos "error: array types mismatch"
   | checkTyEq(_) = Error.error pos "error: types not equal"
+
+fun isSameType(T.UNIT, T.UNIT) = true
+  | isSameType(ty1, ty2) = false
 
 (* beginning of main transExp function *)
 fun transExp(venv, tenv, exp) =
@@ -71,8 +76,11 @@ fun transExp(venv, tenv, exp) =
             in
               transExp(venv', tenv', body)
             end
-
-        | trexp(A.) = 
+        (* BreakExp*)
+        | trexp(A.BreakExp(pos)) = (if !loopLevel = 0 then Err.error pos "illegal break"; {exp = (), ty = T.UNIT}) 
+        (* WhileExp*)
+        | trexp(A.WhileExp{test, body, pos}) = (checkInt(trexp test, pos); if not isSameType(trexp body, T.UNIT) then Err.error "while loop should return UNIT"; loopLevel := !loopLevel - 1; {exp = (), ty = T.UNIT})
+        | trexp(A.ForExp) = 
       and trvar(A.SimpleVar(sym, pos)) =
         (case S.look(venv, sym) of
               SOME(Env.VarEntry({ty})) => {exp=(), ty=ty} 
