@@ -45,7 +45,14 @@ fun transExp(venv, tenv, exp) =
                 {exp=(), ty=T.RECORD(fieldTys, unique)} =>
                     let
                       val fields = fieldTys()
-                      (* fun getFieldType () = TODO: ... this *)
+                      fun getFieldType ((fieldSym, fieldTy)::l, id, pos) =
+                        if String.compare(S.name fieldSym, S.name sym) = EQUAL 
+                        then 
+                          case S.look(tenv, fieldTy) of
+                            SOME(ty) => ty
+                            |NONE => (Err.error pos ("error: type does not exist in fields"); T.BOTTOM)
+                        else getFieldType(l, id, pos)
+                        | getFieldType ([], id, pos) = (Err.error pos ("error: field does not exist in record"); T.BOTTOM)
                     in
                       {exp=(), ty=getFieldType(fields, sym, pos)}
                     end
@@ -54,8 +61,7 @@ fun transExp(venv, tenv, exp) =
         | trvar(A.SubscriptVar(var, exp, pos)) =
             case trvar var of
                 {exp=(), ty=T.ARRAY(arrTy, unique)} => (checkInt(trexp exp, pos); {exp=(), ty=actualTy arrTy})
-                | {exp=_, ty=_} => (Err.error pos ("error: not an array"); {exp=(), ty=T.BOTTOM})
-            
+                | {exp=_, ty=_} => (Err.error pos ("error: not an array"); {exp=(), ty=T.BOTTOM})  
     in
       trexp(exp)
     end
