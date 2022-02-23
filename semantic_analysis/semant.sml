@@ -13,7 +13,8 @@ type tenv = E.ty S.table
 type expty = {exp: Translate.exp, ty: T.ty}
 
 val loopLevel = ref 0
-
+fun incLoopLevel() = loopLevel := !loopLevel + 1
+fun decLoopLevel() = loopLevel := !loopLevel - 1
 (* helper functions *)
 fun getType(SOME(ty)) = ty
     | getType(NONE) = T.BOTTOM 
@@ -26,8 +27,8 @@ fun actualTy ty =
 fun checkInt({exp=_, ty=T.INT}, pos) = ()
     | checkInt ({exp=_, ty=_ }, pos) = Err.error pos "error: not an integer"
 
-fun checkTyComp({exp, ty = T.INT}, {exp, ty = T.INT}) = ()
-  | checkTyComp({exp, ty = T.STRING}, {exp, ty = T.STRING}) = ()
+fun checkTyComp({exp, ty = T.INT}, {exp, ty = T.INT}, pos) = ()
+  | checkTyComp({exp, ty = T.STRING}, {exp, ty = T.STRING}, pos) = ()
   | checkTyComp(_) = Err.error pos "error: not comparable"
 
 fun checkTyEq({exp, ty = T.INT}, {exp, ty = T.INT}, pos) = ()
@@ -42,8 +43,15 @@ fun checkTyEq({exp, ty = T.INT}, {exp, ty = T.INT}, pos) = ()
     if u1 = u2 then () else Err.error pos "error: array types mismatch"
   | checkTyEq(_) = Error.error pos "error: types not equal"
 
-fun isSameType(T.UNIT, T.UNIT) = true
-  | isSameType(ty1, ty2) = false
+fun isSameType(tenv, T.UNIT, T.UNIT, pos) = true
+  | isSameType(tenv, T.INT, T.INT, pos) = true
+  | isSameType(tenv, T.STRING, T.STRING, pos) = true
+  | isSameType(tenv, T.NIL, T.NIL, pos) = true
+  | isSameType(tenv, T.RECORD(_, u1), T.RECORD(_, u2), pos) = u1 = u2
+  | isSameType(tenv, T.RECORD(_), T.UNIT, pos) = true
+  | isSameType(tenv, T.UNIT, T.RECORD(_), pos) = true
+  | isSameType(tenv T.ARRAY(_, u1), T.ARRAY(_, u2), pos) = u1 = u2
+  | isSameType(tenv, ty1, ty2, pos) = false
 
 (* beginning of main transExp function *)
 fun transExp(venv, tenv, exp) =
@@ -76,11 +84,12 @@ fun transExp(venv, tenv, exp) =
             in
               transExp(venv', tenv', body)
             end
-        (* BreakExp*)
+        (* BreakExp *)
         | trexp(A.BreakExp(pos)) = (if !loopLevel = 0 then Err.error pos "illegal break"; {exp = (), ty = T.UNIT}) 
-        (* WhileExp*)
-        | trexp(A.WhileExp{test, body, pos}) = (checkInt(trexp test, pos); if not isSameType(trexp body, T.UNIT) then Err.error "while loop should return UNIT"; loopLevel := !loopLevel - 1; {exp = (), ty = T.UNIT})
-        | trexp(A.ForExp) = 
+        (* WhileExp *)
+        | trexp(A.WhileExp{test, body, pos}) = (checkInt(trexp test, pos); incLoopLevel(); if not isSameType(#ty (trexp body), T.UNIT) then Err.error "while loop should return UNIT"; decLoopLevel(); {exp = (), ty = T.UNIT})
+        (* ForExp *)
+        | trexp(A.ForExp{var, escape, lo, hi, body, pos}) = (checkInt(trexp lo, pos); checkInt(trexp hi, pos); incLoopLevel(); if not isSameType(#ty (transExp(S.enter(venv, var, E.VarEntry{ty = T.INT}), tenv, body)), T.UNIT) then Err.error "for loop should return UNIT"; decLoopLevel(); {exp = (), ty = T.UNIT}) 
       and trvar(A.SimpleVar(sym, pos)) =
         (case S.look(venv, sym) of
               SOME(Env.VarEntry({ty})) => {exp=(), ty=ty} 
