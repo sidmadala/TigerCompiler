@@ -9,19 +9,40 @@ CM.make "sources.cm";
 
 Parse.parse "/path/to/test.tig";
 
-
 **Comments:**
+TODO:
 
-Parser is built via chapters 3 and 4 of Appel book.
+1. go through all of absyn.sml and write code to translate it (that's where the list below comes from)
 
-Shift Reduce Conflicts:
+2. go change escape = ref false in parser? (i guess deal with escapes)
 
-We have 3 shift-reduce conflicts in our grammar. 
+3. figure out if the purely functional record EC is something we want to do  
 
-1. lvalue [] versus arr [] of ID
+vars:
+[x] simple
+[x] field
+[x] subscript
 
-2. funlist conflict on FUNCTION
+exps:
+[x] varexp, nilexp, intexp, stringexp
+[x] opexp
+[] callexp
+[] recordexp
+[x] seqexp
+[] assignexp
+[] ifexp
+[] whileexp
+[] forexp
+[] breakexp
+[] letexp
+[] arrayexp
 
-3. tylist conflicts on TYPE
+decs:
+[] fundec
+[] vardec
+[] typedec
 
-Both conflicts 2 and 3 can be resolved via the default shift-reduce conflict resolution of the parser. For conflict 1, we added an additional state lvalue_not_id which separates the logic and forces a new state instead of running into the conflict.
+types:
+[] namety
+[] recordty
+[] arrayty
