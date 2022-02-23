@@ -34,7 +34,6 @@ fun checkTyComp({exp, ty = T.INT}, {exp, ty = T.INT}, pos) = ()
 fun checkTyEq({exp, ty = T.INT}, {exp, ty = T.INT}, pos) = ()
   | checkTyEq({exp, ty = T.STRING}, {exp, ty = T.STRING}, pos) = ()
   | checkTyEq({exp, ty = T.UNIT}, {exp, ty = T.UNIT}, pos) = ()
-  | checkTyEq({exp, ty = T.NIL}, {exp, ty = T.NIL}, pos) = ()
   | checkTyEq({exp, ty = T.RECORD(_)}, {exp, ty = T.NIL}, pos) = ()
   | checkTyEq({exp, ty = T.NIL}, {exp, ty = T.RECORD(_)}, pos) = ()
   | checkTyEq({exp, ty = T.RECORD(_, u1)}, {exp, ty = T.RECORD(_, u2)}, pos) =
@@ -46,7 +45,6 @@ fun checkTyEq({exp, ty = T.INT}, {exp, ty = T.INT}, pos) = ()
 fun isSameType(tenv, T.UNIT, T.UNIT, pos) = true
   | isSameType(tenv, T.INT, T.INT, pos) = true
   | isSameType(tenv, T.STRING, T.STRING, pos) = true
-  | isSameType(tenv, T.NIL, T.NIL, pos) = true
   | isSameType(tenv, T.RECORD(_, u1), T.RECORD(_, u2), pos) = u1 = u2
   | isSameType(tenv, T.RECORD(_), T.UNIT, pos) = true
   | isSameType(tenv, T.UNIT, T.RECORD(_), pos) = true
@@ -59,6 +57,7 @@ fun transExp(venv, tenv, exp) =
       fun trexp(A.NilExp) = {exp = (), ty = Types.NIL}
         | trexp(A.IntExp(i)) = {exp = (), ty = Types.INT}
         | trexp(A.StringExp(s, pos)) = {exp = (), ty = Types.STRING}
+        | trexp(A.VarExp(var)) = trvar(var)
         (* SeqExp *)
         | trexp(A.SeqExp([])) = {exp = (), ty = Types.UNIT}
         | trexp(A.SeqExp([(exp, pos)])) = trexp(exp)
@@ -87,9 +86,25 @@ fun transExp(venv, tenv, exp) =
         (* BreakExp *)
         | trexp(A.BreakExp(pos)) = (if !loopLevel = 0 then Err.error pos "illegal break"; {exp = (), ty = T.UNIT}) 
         (* WhileExp *)
-        | trexp(A.WhileExp{test, body, pos}) = (checkInt(trexp test, pos); incLoopLevel(); if not isSameType(#ty (trexp body), T.UNIT) then Err.error "while loop should return UNIT"; decLoopLevel(); {exp = (), ty = T.UNIT})
+        | trexp(A.WhileExp{test, body, pos}) = (checkInt(trexp test, pos);
+        incLoopLevel(); if not isSameType(tenv, #ty (trexp body), T.UNIT, pos) then Err.error "while loop should return UNIT"; decLoopLevel(); {exp = (), ty = T.UNIT})
         (* ForExp *)
-        | trexp(A.ForExp{var, escape, lo, hi, body, pos}) = (checkInt(trexp lo, pos); checkInt(trexp hi, pos); incLoopLevel(); if not isSameType(#ty (transExp(S.enter(venv, var, E.VarEntry{ty = T.INT}), tenv, body)), T.UNIT) then Err.error "for loop should return UNIT"; decLoopLevel(); {exp = (), ty = T.UNIT}) 
+        | trexp(A.ForExp{var, escape, lo, hi, body, pos}) = (checkInt(trexp lo,
+        pos); checkInt(trexp hi, pos); incLoopLevel(); if not isSameType(tenv,
+        #ty (transExp(S.enter(venv, var, E.VarEntry{ty = T.INT}), tenv, body)),
+        T.UNIT, pos) then Err.error "for loop should return UNIT"; decLoopLevel(); {exp = (), ty = T.UNIT}) 
+        (* IfExp *)
+        | trexp(A.IfExp{test, then', else', pos}) = (checkInt(trexp test, pos);
+        if not isSome(else') 
+        then 
+            (if not isSameType(tenv, #ty (trexp then'), T.UNIT, pos) 
+             then Err.error pos "then should return UNIT";
+             {exp = (), ty = T.UNIT})
+        else 
+            (if not isSameType(tenv, #ty (trexp then'), #ty (trexp valOf(else')), pos) 
+             then Err.error pos "then and else should return the same type";
+             {exp = (), ty = #ty (trexp then')})
+      
       and trvar(A.SimpleVar(sym, pos)) =
         (case S.look(venv, sym) of
               SOME(Env.VarEntry({ty})) => {exp=(), ty=ty} 
