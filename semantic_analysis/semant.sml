@@ -64,7 +64,15 @@ fun transExp(venv, tenv, exp) =
             | A.GtOp => (checkTyComp(trexp left, trexp right, pos); {exp=(), ty=T.INT})
             | A.GeOp => (checkTyComp(trexp left, trexp right, pos); {exp=(), ty=T.INT})
           )
-        | trexp(A.)
+        (* LetExp *)
+        | trexp(A.LetExp{decs, body, pos}) = 
+            let 
+              val {venv', tenv'} = transDecs(venv, tenv, decs)
+            in
+              transExp(venv', tenv', body)
+            end
+
+        | trexp(A.) = 
       and trvar(A.SimpleVar(sym, pos)) =
         (case S.look(venv, sym) of
               SOME(Env.VarEntry({ty})) => {exp=(), ty=ty} 
@@ -94,9 +102,13 @@ fun transExp(venv, tenv, exp) =
                 {exp=(), ty=T.ARRAY(arrTy, unique)} => (checkInt(trexp exp, pos); {exp=(), ty=actualTy arrTy})
                 | {exp=_, ty=_} => (Err.error pos ("error: not an array"); {exp=(), ty=T.BOTTOM})  
               )    
+
     in
       trexp(exp)
     end
+and transDecs(venv, tenv, []) = {venv = venv, tenv = tenv}
+  | transDecs(venv, tenv, decs) = 
+    (* TODO *)
     (* and transTy(tenv, ty)=  *)
 (* fun transDec() = *)
 
