@@ -11,3 +11,10 @@ tiger.grm
 $/basis.cm
 $/smlnj-lib.cm
 $/ml-yacc-lib.cm
+
+main.sml
+semant.sml
+env.sig
+env.sml
+translate.sml
+types.sml
