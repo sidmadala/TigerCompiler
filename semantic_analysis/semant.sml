@@ -2,6 +2,7 @@ structure A = Absyn
 structure E = Env
 structure S = Symbol
 structure Err = ErrorMsg
+structure T = Types
 
 structure Semant =
 struct
@@ -9,7 +10,7 @@ struct
 type venv = E.enventry S.table
 type tenv = E.ty S.table
 
-type expty = {exp: Translate.exp, ty: Types.ty}
+type expty = {exp: Translate.exp, ty: T.ty}
 
 (* helper functions *)
 fun getType(SOME(ty)) = ty
@@ -23,7 +24,21 @@ fun actualTy ty =
 fun checkInt({exp=_, ty=T.INT}, pos) = ()
     | checkInt ({exp=_, ty=_ }, pos) = Err.error pos "error: not an integer"
 
-fun checkTyEq({exp=_, ty=T.INT}, {exp=_, ty=T.INT}, pos) = ()
+fun checkTyComp({exp, ty = T.INT}, {exp, ty = T.INT}) = ()
+  | checkTyComp({exp, ty = T.STRING}, {exp, ty = T.STRING}) = ()
+  | checkTyComp(_) = Err.error pos "error: not comparable"
+
+fun checkTyEq({exp, ty = T.INT}, {exp, ty = T.INT}, pos) = ()
+  | checkTyEq({exp, ty = T.STRING}, {exp, ty = T.STRING}, pos) = ()
+  | checkTyEq({exp, ty = T.UNIT}, {exp, ty = T.UNIT}, pos) = ()
+  | checkTyEq({exp, ty = T.NIL}, {exp, ty = T.NIL}, pos) = ()
+  | checkTyEq({exp, ty = T.RECORD(_)}, {exp, ty = T.NIL}, pos) = ()
+  | checkTyEq({exp, ty = T.NIL}, {exp, ty = T.RECORD(_)}, pos) = ()
+  | checkTyEq({exp, ty = T.RECORD(_, u1)}, {exp, ty = T.RECORD(_, u2)}, pos) =
+    if u1 = u2 then () else Err.error pos "error: record types mismatch"
+  | checkTyEq({exp, ty = T.ARRAY(_, u1)}, {exp, ty = T.ARRAY(_, u2)}, pos) =
+    if u1 = u2 then () else Err.error pos "error: array types mismatch"
+  | checkTyEq(_) = Error.error pos "error: types not equal"
 
 (* beginning of main transExp function *)
 fun transExp(venv, tenv, exp) =
@@ -44,10 +59,10 @@ fun transExp(venv, tenv, exp) =
             | A.DivideOp => (checkInt(trexp left, pos); checkInt(trexp right, pos); {exp=(), ty=T.INT})
             | A.EqOp => (checkTyEq(trexp left, trexp right, pos); {exp=(), ty=T.INT})
             | A.NeqOp => (checkTyEq(trexp left, trexp right, pos); {exp=(), ty=T.INT})
-            | A.LtOp => (checkTyEq(trexp left, trexp right, pos); {exp=(), ty=T.INT})
-            | A.LeOp => (checkTyEq(trexp left, trexp right, pos); {exp=(), ty=T.INT})
-            | A.GtOp => (checkTyEq(trexp left, trexp right, pos); {exp=(), ty=T.INT})
-            | A.GeOp => (checkTyEq(trexp left, trexp right, pos); {exp=(), ty=T.INT})
+            | A.LtOp => (checkTyComp(trexp left, trexp right, pos); {exp=(), ty=T.INT})
+            | A.LeOp => (checkTyComp(trexp left, trexp right, pos); {exp=(), ty=T.INT})
+            | A.GtOp => (checkTyComp(trexp left, trexp right, pos); {exp=(), ty=T.INT})
+            | A.GeOp => (checkTyComp(trexp left, trexp right, pos); {exp=(), ty=T.INT})
           )
         | trexp(A.)
       and trvar(A.SimpleVar(sym, pos)) =
