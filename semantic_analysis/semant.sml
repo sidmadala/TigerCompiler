@@ -101,28 +101,13 @@ fun transExp(venv, tenv, exp) =
         else 
             (if not isSameType(tenv, #ty (trexp then'), #ty (trexp valOf(else')), pos) 
              then Err.error pos "then and else should return the same type";
-<<<<<<< HEAD
-             {exp = (), ty = #ty (trexp then')})
-      (* AssignExp *)
-      | trexp(A.AssignExp{var, exp, pos}) = 
-        (
-          if not isSameType(tenv, #ty (trvar var), #ty (trexp exp), pos)
-          then Err.error "assignment types mismatch";
-          {exp = (), ty = T.UNIT}
-        )
-      | trexp(A.ArrayExp{typ, size, init, pos}) = 
-        (
-          check
-        )
-=======
              {exp = (), ty = #ty (trexp then')}))
         (* assignExp *)
         | trexp(A.AssignExp{var, exp, pos}) = 
-          (if isSameType(tenv, #ty (trvar(var), #ty (trexp(exp)), pos)
-              then {exp=_ , ty=T.UNIT} 
-              else Err.error pos "error: var and exp types don't match"
+          (if not isSameType(tenv, #ty (trvar(var)), #ty (trexp(exp)), pos)
+              then Err.error pos "error: var and exp types don't match";
+              {exp = () , ty = T.UNIT} 
               )
->>>>>>> 5ac13742a0c7e5be4ce847d491c024cb99f3d86b
       and trvar(A.SimpleVar(sym, pos)) =
         (case S.look(venv, sym) of
               SOME(Env.VarEntry({ty})) => {exp=(), ty=ty} 
