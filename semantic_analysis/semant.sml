@@ -114,7 +114,7 @@ fun transExp(venv, tenv, exp) =
         2. check if argument typing works out  *)
           (let 
           fun getTypeFromExp({exp=_, ty=someTy}) = someTy
-          fun checkFunParams(f::formals : T.ty list, a::args : Absyn.exp list, pos : Absyn.pos) = 
+          fun checkFunParams(f::formals, a::args, pos) = 
                 if isSameType(tenv, f, getTypeFromExp(trexp a), pos) 
                 then checkFunParams(formals, args, pos) 
                 else (Err.error pos "error: argument mismatch"; ())
@@ -123,7 +123,7 @@ fun transExp(venv, tenv, exp) =
               | checkFunParams([], [], pos) = ()
           in 
             case S.look(venv, func) of
-              SOME(Env.FunEntry({formals, resultTy})) => (checkFunParams(formals, args, pos); {exp=(), ty=resultTy})
+              SOME(Env.FunEntry({formals, result})) => (checkFunParams(formals, args, pos); {exp=(), ty=result})
               | SOME(_) => (Err.error pos "error: why this is not a function (does this happen? idk)"; {exp=(), ty=T.UNIT})
               | NONE => (Err.error pos "error: function not declared"; {exp=(), ty=T.UNIT})
           end
