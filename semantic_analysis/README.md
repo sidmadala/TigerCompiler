@@ -3,13 +3,17 @@
 Siddarth Madala (smm158), Michelle Zhang (xmz), Zian Wang (zw142) 
 
 
-**Run Parser:**
+**Run Semantic Analysis**
 
 CM.make "sources.cm";
 
-Parse.parse "/path/to/test.tig";
+Main.main "/path/to/test.tig";
 
 **Comments:**
+
+Semantic analyzer is built via chapter 5 of Appel book.
+
+Our group wrote main.sml, env.sml, and semant.sml.
 
 TODO:
 1. go through all of absyn.sml and write code to translate it (that's where the list below comes from)
