@@ -32,6 +32,7 @@ fun typeExtractor(tenv, typ : T.ty, pos) = typ
       in
         extractorHelper(!uniqueOpt)
       end
+
 fun getTyFromSymbol(tenv, sym) = 
       case S.look(tenv, sym) of 
         SOME(typ) => typeExtractor(tenv, typ, pos)
@@ -198,8 +199,8 @@ and transTy(tenv, ty) =
         let 
           fun trfields {name, escape, typ, pos} =
             case S.look(tenv, typ) of
-              SOME ty => (name, ty)
-            | NONE => (Err.error pos ("error: undefined type in rec: " ^ S.name typ); (name, typ))  
+              SOME(ty) => (name, ty)
+            | NONE => (Err.error pos ("error: undefined type in record field: " ^ S.name typ); (name, T.NIL))  
             (* TODO: fix one of these things idk what's wrong @MICHELLE *)
             fun recGen() = foldl (fn (a, b) => trfields(a)::b) [] fields
         in 
