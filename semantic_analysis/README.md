@@ -29,7 +29,6 @@ exps:
 - [x] varexp, nilexp, intexp, stringexp
 - [x] opexp
 - [x] callexp
-- [ ] recordexp
 - [x] seqexp
 - [x] assignexp
 - [x] ifexp
@@ -38,6 +37,7 @@ exps:
 - [x] breakexp
 - [x] letexp
 - [ ] arrayexp
+- [ ] recordexp
 
 decs:
 - [ ] fundec
@@ -45,6 +45,6 @@ decs:
 - [ ] typedec
 
 types:
-- [ ] namety
-- [ ] recordty
-- [ ] arrayty
+- [x] namety
+- [x] recordty
+- [x] arrayty
