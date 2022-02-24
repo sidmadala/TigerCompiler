@@ -28,15 +28,15 @@ fun typeExtractor(tenv, typ : T.ty, pos) = typ
     | typeExtractor(tenv, T.NAME(sym, uniqueOpt), pos) = 
       let 
         fun extractorHelper(SOME(typ)) = typeExtractor(tenv, typ, pos)
-          | extractorHelper(NONE) = Err.error pos "error: symbol"^ (S.name sym) ^"not defined"  
+          | extractorHelper(NONE) = (Err.error pos "error: symbol not defined"; T.BOTTOM) 
       in
         extractorHelper(!uniqueOpt)
       end
 
-fun getTyFromSymbol(tenv, sym) = 
+fun getTyFromSymbol(tenv, sym, pos) = 
       case S.look(tenv, sym) of 
         SOME(typ) => typeExtractor(tenv, typ, pos)
-        | NONE => (ErrorMsg.error pos ("type " ^ (S.name symb) ^ " not yet defined"); T.INT)
+        | NONE => (ErrorMsg.error pos ("type not yet defined"); T.INT)
 
 fun checkInt({exp=_, ty=T.INT}, pos) = ()
     | checkInt ({exp=_, ty=_ }, pos) = Err.error pos "error: not an integer"
@@ -94,7 +94,7 @@ fun transExp(venv, tenv, exp) =
         (* LetExp *)
         | trexp(A.LetExp{decs, body, pos}) = 
             let 
-              val {venv', tenv'} = transDecs(venv, tenv, decs)
+              val {venv', tenv'} = transDec(venv, tenv, decs)
             in
               transExp(venv', tenv', body)
             end
@@ -147,7 +147,7 @@ fun transExp(venv, tenv, exp) =
           )
         | trexp(A.ArrayExp({typ, size, init, pos})) =
             (checkInt(trexp size, pos);
-            if isSameType(tenv, #ty (trexp(init)), getTyFromSymbol(tenv, typ), pos)
+            if isSameType(tenv, #ty (trexp(init)), getTyFromSymbol(tenv, typ, pos), pos)
             then ()
             else Err.error pos "error: array type and initializing exp differ";
             {exp=(), ty=T.ARRAY(#ty (trexp(init)), unique)}
@@ -185,9 +185,27 @@ fun transExp(venv, tenv, exp) =
       trexp(exp)
     end
 
-and transDecs(venv, tenv, []) = {venv = venv, tenv = tenv}
-  | transDecs(venv, tenv, decs) = {venv = venv, tenv = tenv}
-    (* TODO *)
+and transDec(venv, tenv, []) = {venv = venv, tenv = tenv}
+  | transDec(venv, tenv, A.VarDec{name, typ=NONE, init, ...}) = 
+      let val {exp, ty} = transExp(venv, tenv, init)
+      in {tenv=tenv, 
+          venv=S.enter(venv, name, E.VarEntry{ty=ty})}
+      end
+  | transDec(venv, tenv, A.TypeDec[{name,ty}]) = {venv=venv, tenv=S.enter(tenv, name, transTy(tenv,ty))}
+  | transDec(venv, tenv, A.FunctionDec[{name, params, body, pos, result=SOME(rt,pos)}]) =
+      let val SOME(result_ty) = S.look(tenv, rt)
+          fun transparam{name, typ, pos} = 
+            (case S.look(tenv, typ)
+              of SOME t => {name=name, ty=t})
+          val params' = map transparam params
+          val venv' = S.enter(venv, name, FunEntry{formals=map #ty params', result=result_ty})
+          fun enterparam({name, ty}, venv) = S.enter(venv, name, E.VarEntry{ty=ty})
+          val venv''= fold enterparam params' venv'
+      in 
+      transExp(venv'', tenv) body; 
+      {venv=venv',tenv=tenv} 
+      end
+
 and transTy(tenv, ty) =
   let 
     fun trty(tenv, A.NameTy (name, _)) = 
