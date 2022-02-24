@@ -129,9 +129,9 @@ fun transExp(venv, tenv, exp) =
               | NONE => (Err.error pos "error: function not declared"; {exp=(), ty=T.UNIT})
           end
           )
-        | trexp(A.ArrayExp{type, size, init, pos}) =
+        (* | trexp(A.ArrayExp{typ, size, init, pos}) =
           (checkInt(trexp size, pos);
-          if isSameType(tenv, #ty (trexp(init)), , pos))
+          if isSameType(tenv, #ty (trexp(init)), , pos)) *)
       and trvar(A.SimpleVar(sym, pos)) =
         (case S.look(venv, sym) of
               SOME(Env.VarEntry({ty})) => {exp=(), ty= ty} 
@@ -171,17 +171,17 @@ and transDecs(venv, tenv, []) = {venv = venv, tenv = tenv}
 and transTy(tenv, ty) =
   let 
     fun trty(tenv, A.NameTy (name, _)) = 
-      case S.look(tenv, name) of
+      (case S.look(tenv, name) of
         SOME _ => T.NAME(name, ref(NONE))
-      | NONE => (Err.error 0 ("Unrecognized name type: " ^ S.name name); T.NAME(name, ref(NONE)))
+      | NONE => (Err.error 0 ("error: unrecognized name type: " ^ S.name name); T.NAME(name, ref(NONE)))
+      )    
     | trty(tenv, A.RecordTy(fields)) = 
         let 
-          fun fieldProcess {name, escape, typ, pos} =
+          fun trfields {name, escape, typ, pos} =
             case S.look(tenv, typ) of
-              SOME _ => (name, typ)
-            | NONE => (Err.error pos ("undefined type in rec: " ^ S.name typ); (name, typ))    
-            fun listConcat(a, b) = fieldProcess(a)::b
-            fun recGen () = foldl listConcat [] fields
+              SOME ty => (name, ty)
+            | NONE => (Err.error pos ("error: undefined type in rec: " ^ S.name typ); (name, typ))    
+            fun recGen() = foldl (fn (a, b) => trfields(a)::b) [] fields
         in 
             recGen();
             T.RECORD (recGen, ref ())

@@ -1,6 +1,5 @@
 structure Types =
 struct
-
   type unique = unit ref
 
   datatype ty = 
