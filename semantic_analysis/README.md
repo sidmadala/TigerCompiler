@@ -7,7 +7,7 @@ Siddarth Madala (smm158), Michelle Zhang (xmz), Zian Wang (zw142)
 
 CM.make "sources.cm";
 
-Main.main "/path/to/test.tig";
+Main.compile "/path/to/test.tig";
 
 **Comments:**
 

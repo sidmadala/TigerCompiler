@@ -40,15 +40,15 @@ fun checkTyEq({exp=_, ty = T.INT}, {exp, ty = T.INT}, pos) = ()
     if u1 = u2 then () else Err.error pos "error: record types mismatch"
   | checkTyEq({exp=_, ty = T.ARRAY(_, u1)}, {exp, ty = T.ARRAY(_, u2)}, pos) =
     if u1 = u2 then () else Err.error pos "error: array types mismatch"
-  | checkTyEq(_) = Error.error pos "error: types not equal"
+  | checkTyEq(_, _, pos) = Err.error pos "error: types not equal"
 
 fun isSameType(tenv, T.UNIT, T.UNIT, pos) = true
   | isSameType(tenv, T.INT, T.INT, pos) = true
   | isSameType(tenv, T.STRING, T.STRING, pos) = true
-  | isSameType(tenv, T.RECORD(_, u1), T.RECORD(_, u2), pos) = u1 = u2
+  | isSameType(tenv, T.RECORD(_, u1), T.RECORD(_, u2), pos) = (u1 = u2)
   | isSameType(tenv, T.RECORD(_), T.UNIT, pos) = true
   | isSameType(tenv, T.UNIT, T.RECORD(_), pos) = true
-  | isSameType(tenv T.ARRAY(_, u1), T.ARRAY(_, u2), pos) = u1 = u2
+  | isSameType(tenv, T.ARRAY(_, u1), T.ARRAY(_, u2), pos) = (u1 = u2)
   | isSameType(tenv, ty1, ty2, pos) = false
 
 (* beginning of main transExp function *)
@@ -63,8 +63,8 @@ fun transExp(venv, tenv, exp) =
         | trexp(A.SeqExp([(exp, pos)])) = trexp(exp)
         | trexp(A.SeqExp((exp, pos)::l)) = (trexp(exp); trexp(l))
         (* OpExp: check for type equality*)
-        | trexp(A.OpExp{left, operation, right, pos}) = 
-          (case operation of 
+        | trexp(A.OpExp{left, oper, right, pos}) = 
+          (case oper of 
               A.PlusOp => (checkInt(trexp left, pos); checkInt(trexp right, pos); {exp=(), ty=T.INT})
             | A.MinusOp => (checkInt(trexp left, pos); checkInt(trexp right, pos); {exp=(), ty=T.INT})
             | A.TimesOp => (checkInt(trexp left, pos); checkInt(trexp right, pos); {exp=(), ty=T.INT})
@@ -87,10 +87,10 @@ fun transExp(venv, tenv, exp) =
         | trexp(A.BreakExp(pos)) = (if !loopLevel = 0 then Err.error pos "illegal break" else (); {exp = (), ty = T.UNIT}) 
         (* WhileExp *)
         | trexp(A.WhileExp{test, body, pos}) = (checkInt(trexp test, pos);
-        incLoopLevel(); if not isSameType(tenv, #ty (trexp body), T.UNIT, pos) then Err.error "while loop should return UNIT" else (); decLoopLevel(); {exp = (), ty = T.UNIT})
+        incLoopLevel(); if not isSameType(tenv, #ty (trexp body), T.UNIT, pos) then Err.error pos "while loop should return UNIT" else (); decLoopLevel(); {exp = (), ty = T.UNIT})
         (* ForExp *)
         | trexp(A.ForExp{var, escape, lo, hi, body, pos}) = (checkInt(trexp lo, pos); checkInt(trexp hi, pos); incLoopLevel(); if not isSameType(tenv,
-        #ty (transExp(S.enter(venv, var, E.VarEntry{ty = T.INT}), tenv, body)), T.UNIT, pos) then Err.error "for loop should return UNIT" else (); decLoopLevel(); {exp = (), ty = T.UNIT}) 
+        #ty (transExp(S.enter(venv, var, E.VarEntry{ty=T.INT}), tenv, body)), T.UNIT, pos) then Err.error pos "for loop should return UNIT" else (); decLoopLevel(); {exp = (), ty = T.UNIT}) 
         (* IfExp *)
         | trexp(A.IfExp{test, then', else', pos}) = (checkInt(trexp test, pos);
         if not isSome(else') 
@@ -99,7 +99,7 @@ fun transExp(venv, tenv, exp) =
              then Err.error pos "then should return UNIT" else ();
              {exp = (), ty = T.UNIT})
         else 
-            (if not isSameType(tenv, #ty (trexp then'), #ty (trexp valOf(else')), pos) 
+            (if(not isSameType(tenv, #ty (trexp then'), #ty (trexp valOf(else')), pos))
              then Err.error pos "then and else should return the same type" else ();
              {exp = (), ty = #ty (trexp then')}))
         (* AssignExp *)
@@ -113,16 +113,16 @@ fun transExp(venv, tenv, exp) =
         (* 1. S.look if function exists
         2. check if argument typing works out  *)
           (let 
-          fun checkFunParams(f::formals, a::args, pos) = 
+          fun checkFunParams(f::formals : Env.ty list, a::args : Absyn.exp list, pos : Absyn.pos) = 
                 if isSameType(tenv, f, a, pos) 
                 then checkFunParams(formals, args, pos) 
-                else Err.error pos "error: argument mismatch, expected" ^ (f) ^ "got" ^ (a) 
+                else Err.error pos "error: argument mismatch, expected " ^ S.name f ^ "got " ^ S.name a 
               | checkFunParams([], a::args, pos) = Err.error pos "error: too many arguments given"
               | checkFunParams(f::formals, [], pos) = Err.error pos "error: not enough arguments given"
               | checkFunParams([], [], pos) = ()
           in 
             case S.look(venv, func) of
-              SOME(Env.FunEntry{formals, resultTy}) => (checkFunParams(formals, args, pos); {exp=(), ty = resultTy})
+              SOME(Env.FunEntry({formals, resultTy})) => (checkFunParams(formals, args, pos); {exp=(), ty=resultTy})
               | SOME(_) => (Err.error pos "error: why this is not a function (does this happen? idk)"; {exp=(), ty=T.UNIT})
               | NONE => (Err.error pos "error: function not declared"; {exp=(), ty=T.UNIT})
           end
@@ -138,10 +138,10 @@ fun transExp(venv, tenv, exp) =
                 {exp=(), ty=T.RECORD(fieldTys, unique)} =>
                     let
                       val fields = fieldTys()
-                      fun getFieldType ((fieldSym, fieldTy)::l, id, pos) =
+                      fun getFieldType ((fieldSym, fieldTy)::l, id : Absyn.symbol, pos : Absyn.pos) =
                         if String.compare(S.name fieldSym, S.name sym) = EQUAL 
                         then 
-                          case S.look(tenv, fieldTy) of
+                          case S.look(tenv, fieldSym) of
                             SOME(ty) => ty
                             |NONE => (Err.error pos ("error: type does not exist in fields"); T.BOTTOM)
                         else getFieldType(l, id, pos)
@@ -160,10 +160,10 @@ fun transExp(venv, tenv, exp) =
       trexp(exp)
     end
 
- (* and transDecs(venv, tenv, []) = {venv = venv, tenv = tenv}
-  | transDecs(venv, tenv, decs) = 
+ and transDecs(venv, tenv, []) = {venv = venv, tenv = tenv}
+  | transDecs(venv, tenv, decs) = {venv = venv, tenv = tenv}
     (* TODO *)
-    and transTy(tenv, ty)=  *)
+    and transTy(tenv, ty) = ()
 
 (* transProg needs to take in expression to translate, run transExp, and return unit *)
 fun transProg(exp_to_translate : A.exp) = 
