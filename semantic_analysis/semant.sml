@@ -63,6 +63,8 @@ fun isSameType(tenv, T.UNIT, T.UNIT, pos : Absyn.pos) = true
   | isSameType(tenv, T.RECORD(_), T.UNIT, pos) = true
   | isSameType(tenv, T.UNIT, T.RECORD(_), pos) = true
   | isSameType(tenv, T.ARRAY(_, u1), T.ARRAY(_, u2), pos) = (u1 = u2)
+  | isSameType(tenv, T.NAME(s1, _), T.NAME(s2, _), pos) = String.compare(S.name
+  s1, S.name s2) = EQUAL
   | isSameType(tenv, ty1, ty2, pos) = false
 
 (* beginning of main transExp function *)
