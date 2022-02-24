@@ -24,7 +24,7 @@ vars:
 exps:
 - [x] varexp, nilexp, intexp, stringexp
 - [x] opexp
-- [ ] callexp
+- [x] callexp
 - [ ] recordexp
 - [x] seqexp
 - [x] assignexp
