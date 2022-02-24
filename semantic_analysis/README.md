@@ -36,7 +36,7 @@ exps:
 - [x] forexp
 - [x] breakexp
 - [x] letexp
-- [ ] arrayexp
+- [x] arrayexp
 - [ ] recordexp
 
 decs:

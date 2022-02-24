@@ -24,6 +24,19 @@ fun actualTy(tenv, ty) =
         T.NAME(name, tyref) => actualTy(tenv, getType(S.look(tenv, name)))
         | someTy => someTy
 
+fun typeExtractor(tenv, typ : T.ty, pos) = typ
+    | typeExtractor(tenv, T.NAME(sym, uniqueOpt), pos) = 
+      let 
+        fun extractorHelper(SOME(typ)) = typeExtractor(tenv, typ, pos)
+          | extractorHelper(NONE) = Err.error pos "error: symbol"^ (S.name sym) ^"not defined"  
+      in
+        extractorHelper(!uniqueOpt)
+      end
+fun getTyFromSymbol(tenv, sym) = 
+      case S.look(tenv, sym) of 
+        SOME(typ) => typeExtractor(tenv, typ, pos)
+        | NONE => (ErrorMsg.error pos ("type " ^ (S.name symb) ^ " not yet defined"); T.INT)
+
 fun checkInt({exp=_, ty=T.INT}, pos) = ()
     | checkInt ({exp=_, ty=_ }, pos) = Err.error pos "error: not an integer"
 
@@ -61,6 +74,7 @@ fun transExp(venv, tenv, exp) =
         (* SeqExp *)
         | trexp(A.SeqExp([])) = {exp = (), ty = Types.UNIT}
         | trexp(A.SeqExp([(exp, pos)])) = trexp(exp)
+        (* TODO: FIX BUG @zian *)
         | trexp(A.SeqExp((exp, pos)::l)) = (trexp(exp); trexp(l))
         (* OpExp: check for type equality*)
         | trexp(A.OpExp{left, oper, right, pos}) = 
@@ -95,6 +109,7 @@ fun transExp(venv, tenv, exp) =
         | trexp(A.IfExp{test, then', else', pos}) = (checkInt(trexp test, pos);
         if isSome(else')
         then 
+            (* TODO: FIX TREXP VALOF @ZIAN *)
             (if isSameType(tenv, #ty (trexp then'), #ty (trexp valOf(else')), pos)
              then () else Err.error pos "then and else should return the same type";
              {exp = (), ty = #ty (trexp then')})
@@ -129,9 +144,13 @@ fun transExp(venv, tenv, exp) =
               | NONE => (Err.error pos "error: function not declared"; {exp=(), ty=T.UNIT})
           end
           )
-        (* | trexp(A.ArrayExp{typ, size, init, pos}) =
-          (checkInt(trexp size, pos);
-          if isSameType(tenv, #ty (trexp(init)), , pos)) *)
+        | trexp(A.ArrayExp({typ, size, init, pos})) =
+            (checkInt(trexp size, pos);
+            if isSameType(tenv, #ty (trexp(init)), getTyFromSymbol(tenv, typ), pos)
+            then ()
+            else Err.error pos "error: array type and initializing exp differ";
+            {exp=(), ty=T.ARRAY(#ty (trexp(init)), unique)}
+            )
       and trvar(A.SimpleVar(sym, pos)) =
         (case S.look(venv, sym) of
               SOME(Env.VarEntry({ty})) => {exp=(), ty= ty} 
@@ -143,14 +162,14 @@ fun transExp(venv, tenv, exp) =
                 {exp=(), ty=T.RECORD(fieldTys, unique)} =>
                     let
                       val fields = fieldTys()
-                      fun getFieldType ((fieldSym, fieldTy)::l, id : Absyn.symbol, pos : Absyn.pos) =
-                        if String.compare(S.name fieldSym, S.name sym) = EQUAL 
-                        then 
-                          case S.look(tenv, fieldSym) of
-                            SOME(ty) => ty
-                            |NONE => (Err.error pos ("error: type does not exist in fields"); T.BOTTOM)
-                        else getFieldType(l, id, pos)
-                        | getFieldType ([], id, pos) = (Err.error pos ("error: field does not exist in record"); T.BOTTOM)
+                      fun getFieldType((fieldSym, fieldTy)::l, id : Absyn.symbol, pos : Absyn.pos) =
+                            if String.compare(S.name fieldSym, S.name sym) = EQUAL 
+                            then 
+                              case S.look(tenv, fieldSym) of
+                                SOME(ty) => ty
+                                |NONE => (Err.error pos ("error: type does not exist in fields"); T.BOTTOM)
+                            else getFieldType(l, id, pos)
+                        | getFieldType([], id, pos) = (Err.error pos ("error: field does not exist in record"); T.BOTTOM)
                     in
                       {exp=(), ty=getFieldType(fields, sym, pos)}
                     end
@@ -180,7 +199,8 @@ and transTy(tenv, ty) =
           fun trfields {name, escape, typ, pos} =
             case S.look(tenv, typ) of
               SOME ty => (name, ty)
-            | NONE => (Err.error pos ("error: undefined type in rec: " ^ S.name typ); (name, typ))    
+            | NONE => (Err.error pos ("error: undefined type in rec: " ^ S.name typ); (name, typ))  
+            (* TODO: fix one of these things idk what's wrong @MICHELLE *)
             fun recGen() = foldl (fn (a, b) => trfields(a)::b) [] fields
         in 
             recGen();
