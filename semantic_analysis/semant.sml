@@ -89,10 +89,8 @@ fun transExp(venv, tenv, exp) =
         | trexp(A.WhileExp{test, body, pos}) = (checkInt(trexp test, pos);
         incLoopLevel(); if not isSameType(tenv, #ty (trexp body), T.UNIT, pos) then Err.error "while loop should return UNIT" else (); decLoopLevel(); {exp = (), ty = T.UNIT})
         (* ForExp *)
-        | trexp(A.ForExp{var, escape, lo, hi, body, pos}) = (checkInt(trexp lo,
-        pos); checkInt(trexp hi, pos); incLoopLevel(); if not isSameType(tenv,
-        #ty (transExp(S.enter(venv, var, E.VarEntry{ty = T.INT}), tenv, body)),
-        T.UNIT, pos) then Err.error "for loop should return UNIT" else (); decLoopLevel(); {exp = (), ty = T.UNIT}) 
+        | trexp(A.ForExp{var, escape, lo, hi, body, pos}) = (checkInt(trexp lo, pos); checkInt(trexp hi, pos); incLoopLevel(); if not isSameType(tenv,
+        #ty (transExp(S.enter(venv, var, E.VarEntry{ty = T.INT}), tenv, body)), T.UNIT, pos) then Err.error "for loop should return UNIT"; decLoopLevel(); {exp = (), ty = T.UNIT}) 
         (* IfExp *)
         | trexp(A.IfExp{test, then', else', pos}) = (checkInt(trexp test, pos);
         if not isSome(else') 
@@ -106,10 +104,9 @@ fun transExp(venv, tenv, exp) =
              {exp = (), ty = #ty (trexp then')}))
         (* AssignExp *)
         | trexp(A.AssignExp{var, exp, pos}) = 
-          (if isSameType(tenv, #ty (trvar(var), #ty (trexp(exp)), pos))
-              then ()
-              else Err.error pos "error: var and exp types don't match";
-              {exp=() , ty=T.UNIT}
+          (if not isSameType(tenv, #ty (trvar(var)), #ty (trexp(exp)), pos)
+              then Err.error pos "error: var and exp types don't match" else ();
+              {exp = () , ty = T.UNIT} 
               )
         (* CallExp *)
         | trexp(A.CallExp{func, args, pos}) = 
