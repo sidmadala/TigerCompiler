@@ -1,3 +1,5 @@
+structure T = Types 
+
 structure Env :> ENV = 
 struct
   type access = unit

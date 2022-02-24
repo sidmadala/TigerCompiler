@@ -1,14 +1,13 @@
+structure Err = ErrorMsg
 structure A = Absyn
 structure E = Env
 structure S = Symbol
-structure Err = ErrorMsg
-structure T = Types
 
 structure Semant =
 struct
 
 type venv = E.enventry S.table
-type tenv = E.ty S.table
+type tenv = T.ty S.table
 
 type expty = {exp: Translate.exp, ty: T.ty}
 
@@ -42,7 +41,7 @@ fun checkTyEq({exp=_, ty = T.INT}, {exp, ty = T.INT}, pos) = ()
     if u1 = u2 then () else Err.error pos "error: array types mismatch"
   | checkTyEq(_, _, pos) = Err.error pos "error: types not equal"
 
-fun isSameType(tenv, T.UNIT, T.UNIT, pos) = true
+fun isSameType(tenv, T.UNIT, T.UNIT, pos : Absyn.pos) = true
   | isSameType(tenv, T.INT, T.INT, pos) = true
   | isSameType(tenv, T.STRING, T.STRING, pos) = true
   | isSameType(tenv, T.RECORD(_, u1), T.RECORD(_, u2), pos) = (u1 = u2)
@@ -95,17 +94,17 @@ fun transExp(venv, tenv, exp) =
         | trexp(A.IfExp{test, then', else', pos}) = (checkInt(trexp test, pos);
         if not isSome(else') 
         then 
-            (if not isSameType(tenv, #ty (trexp then'), T.UNIT, pos) 
-             then Err.error pos "then should return UNIT" else ();
+            (if isSameType(tenv, #ty (trexp then'), T.UNIT, pos) 
+             then () else Err.error pos "then should return UNIT";
              {exp = (), ty = T.UNIT})
         else 
-            (if(not isSameType(tenv, #ty (trexp then'), #ty (trexp valOf(else')), pos))
-             then Err.error pos "then and else should return the same type" else ();
+            (if isSameType(tenv, #ty (trexp then'), #ty (trexp valOf(else')), pos)
+             then () else Err.error pos "then and else should return the same type";
              {exp = (), ty = #ty (trexp then')}))
         (* AssignExp *)
         | trexp(A.AssignExp{var, exp, pos}) = 
-          (if not isSameType(tenv, #ty (trvar(var)), #ty (trexp(exp)), pos)
-              then Err.error pos "error: var and exp types don't match" else ();
+          (if isSameType(tenv, #ty (trvar(var)), #ty (trexp(exp)), pos)
+              then () else Err.error pos "error: var and exp types don't match";
               {exp = () , ty = T.UNIT} 
               )
         (* CallExp *)
@@ -113,12 +112,13 @@ fun transExp(venv, tenv, exp) =
         (* 1. S.look if function exists
         2. check if argument typing works out  *)
           (let 
-          fun checkFunParams(f::formals : Env.ty list, a::args : Absyn.exp list, pos : Absyn.pos) = 
-                if isSameType(tenv, f, a, pos) 
+          fun getTypeFromExp({exp=_, ty=someTy}) = someTy
+          fun checkFunParams(f::formals : T.ty list, a::args : Absyn.exp list, pos : Absyn.pos) = 
+                if isSameType(tenv, f, getTypeFromExp(trexp a), pos) 
                 then checkFunParams(formals, args, pos) 
-                else Err.error pos "error: argument mismatch, expected " ^ S.name f ^ "got " ^ S.name a 
-              | checkFunParams([], a::args, pos) = Err.error pos "error: too many arguments given"
-              | checkFunParams(f::formals, [], pos) = Err.error pos "error: not enough arguments given"
+                else (Err.error pos "error: argument mismatch"; ())
+              | checkFunParams([], a::args, pos) = (Err.error pos "error: too many arguments given"; ())
+              | checkFunParams(f::formals, [], pos) = (Err.error pos "error: not enough arguments given"; ())
               | checkFunParams([], [], pos) = ()
           in 
             case S.look(venv, func) of
@@ -129,9 +129,9 @@ fun transExp(venv, tenv, exp) =
           )
       and trvar(A.SimpleVar(sym, pos)) =
         (case S.look(venv, sym) of
-              SOME(Env.VarEntry({ty})) => {exp=(), ty=ty} 
-            | SOME(Env.FunEntry({formals, result})) => {exp=(), ty=result} 
-            | NONE => (Err.error pos ("error: variable not declared" ^ S.name sym); {exp=(), ty=T.BOTTOM})
+              SOME(Env.VarEntry({ty})) => {exp=(), ty= ty} 
+            | SOME(Env.FunEntry({formals, result})) => {exp=(), ty= result} 
+            | NONE => (Err.error pos ("error: variable not declared" ^ S.name sym); {exp=(), ty= T.BOTTOM})
         )
         | trvar(A.FieldVar(var, sym, pos)) = 
             (case trvar var of 
