@@ -90,7 +90,7 @@ fun transExp(venv, tenv, exp) =
         incLoopLevel(); if not isSameType(tenv, #ty (trexp body), T.UNIT, pos) then Err.error "while loop should return UNIT" else (); decLoopLevel(); {exp = (), ty = T.UNIT})
         (* ForExp *)
         | trexp(A.ForExp{var, escape, lo, hi, body, pos}) = (checkInt(trexp lo, pos); checkInt(trexp hi, pos); incLoopLevel(); if not isSameType(tenv,
-        #ty (transExp(S.enter(venv, var, E.VarEntry{ty = T.INT}), tenv, body)), T.UNIT, pos) then Err.error "for loop should return UNIT"; decLoopLevel(); {exp = (), ty = T.UNIT}) 
+        #ty (transExp(S.enter(venv, var, E.VarEntry{ty = T.INT}), tenv, body)), T.UNIT, pos) then Err.error "for loop should return UNIT" else (); decLoopLevel(); {exp = (), ty = T.UNIT}) 
         (* IfExp *)
         | trexp(A.IfExp{test, then', else', pos}) = (checkInt(trexp test, pos);
         if not isSome(else') 
