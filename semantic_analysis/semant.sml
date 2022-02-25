@@ -15,6 +15,21 @@ val loopLevel = ref 0
 fun incLoopLevel() = loopLevel := !loopLevel + 1
 fun decLoopLevel() = loopLevel := !loopLevel - 1
 
+fun isSubType(T.BOTTOM, _) = true
+  | isSubType(_, UNIT) = true
+  | isSubType(NIL, RECORD(_)) = true
+  | isSubType(INT, INT) = true
+  | isSubType(STRING, STRING) = true
+  | isSubType(T.RECORD(_, u1), T.RECORD(_, u2)) = u1 = u2
+  | isSubType(T.ARRAY(_, u1), T.ARRAY(_, u2)) = u1 = u2
+  | isSubType(T.NAME(s1, _), T.NAME(s2, _)) = String.compare(S.name s1, S.name
+  s2) = EQUAL 
+  | isSubType(_, _) = false
+
+
+fun checkTyRelation(t1, t2, "eq", pos, errorMsg) = (if isSubType(t1, t2) andalso
+  isSubType(t2, t1) then () else Err.errorMsg pos errorMsg; ())
+
 (* helper functions *)
 fun getType(SOME(ty)) = ty
     | getType(NONE) = T.BOTTOM
