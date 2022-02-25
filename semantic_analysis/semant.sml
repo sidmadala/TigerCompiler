@@ -70,6 +70,32 @@ fun isSameType(tenv, T.UNIT, T.UNIT, pos : Absyn.pos) = true
                                                       then ()
                                                       else Err.error pos errMsg
 
+(* Check for cycles in declarations *)
+fun checkIllegalCycle({name, ty, pos}, ()) = 
+  let
+    fun cycleHelper(observed, name) =
+      (case S.look(#tenv new_env, name) of
+            SOME(T.NAME(sym, _)) => if List.exists (fn elem => String.compare(S.name sym, S.name elem) = EQUAL) observed
+                                    then Err.error pos "error: cycle exists in declaration"
+                                    else cycleHelper(name::observed, sym)
+          | _ => ()
+      )
+  in
+    cycleHelper([], name)
+  end
+
+(* Checks for duplicate type declaration in tenv *)
+fun checkTyDecDuplicates({name, ty, pos}, observed) = 
+  if List.exists (fn elem => String.compare(S.name name, elem) = EQUAL) observed
+  then (Err.error pos "error : duplicate types in mutually recursive tydec"; observed)
+  else (S.name name)::observed
+
+(* Checks for duplicate type declaration in fundeclist *)
+fun checkFunDecDuplicates({name, params, body, pos, result}, observed) = 
+  if List.exists (fn elem => String.compare(S.name name, elem) = EQUAL) observed
+  then (Err.error pos "error : two types of same name in mutually recursive fundec"; observed)
+  else (S.name name)::observed
+
 (* beginning of main transExp function *)
 fun transExp(venv, tenv, exp) =
     let
@@ -222,7 +248,7 @@ fun transExp(venv, tenv, exp) =
 and transDec(venv, tenv, decs) = 
   let 
     fun trdec(venv, tenv, A.VarDec({name, escape, typ, init, pos})) =
-      case typ of 
+      (case typ of 
         SOME(sym, pos) => 
           (case (S.look(tenv, sym)) of
             SOME(t : T.ty) => (checkTypesAssignable(actualTy(tenv, t), #ty (transExp(venv, tenv, init)), pos, "error : mismatched types in vardec");
@@ -240,8 +266,68 @@ and transDec(venv, tenv, decs) =
           else ();
           {venv = S.enter(venv, name, (Env.VarEntry{ty=ty})), tenv=tenv}
         end
-    (* | trdec(venv, tenv, A.TypeDec(tydeclist)) = *)
-    (* | trdec(venv, tenv, A.FunctionDec(fundeclist)) = *)
+      )
+    | trdec(venv, tenv, A.TypeDec(tydeclist)) =
+      let
+        fun tydectempgenerator ({name, ty, pos}, tenv') = S.enter(tenv', name, T.BOTTOM)
+        val temptenv = foldl maketemptydec tenv tydeclist
+        fun mergeenvs({name, ty, pos}, {venv, tenv}) = {venv=venv, tenv=S.enter(tenv, name, transTy(temptenv, ty))}
+        val newenv = foldl mergeenvs {venv=venv, tenv=tenv} tydeclist
+      in
+        foldl checkTyDecDuplicates [] tydeclist;
+        foldl checkIllegalCycle () tydeclist;
+        newenv
+      end
+
+    | trdec(venv, tenv, A.FunctionDec(fundeclist)) =
+      let 
+        fun transrt rt =
+          (case S.look(tenv, rt) of 
+              SOME(rt') => rt'
+            | NONE => (Err.error 0 ("Return type unrecognized: " ^ S.name rt); T.BOTTOM)
+          )   (* Similar to trty of NameTy but must return the return type of the function *)
+
+        (* Similar to trty of NameTy but must return the param type of the function *)
+        fun transparam {name, escape, typ, pos} = 
+          (case S.look(tenv, typ) of
+              SOME t => {name=name, ty=t}
+            | NONE => (Err.error 0 ("Parameter type unrecognized: " ^ S.name typ); {name=name, ty=T.BOTTOM})
+          )
+
+        (* Place function into venv *)
+        fun funvenv ({name, params, body, pos, result=SOME(rt, pos')}, venv) = 
+              S.enter(venv, name, Env.FunEntry{formals= map #ty (map transparam params), result=transrt rt})
+          | funvenv ({name, params, body, pos, result=NONE}, venv) =   (* Some functions are void and do not have return values *)
+              S.enter(venv, name, Env.FunEntry{formals= map #ty (map transparam params), result=T.UNIT})
+       
+        (* Temp venv for fundeclist => added to actual venv later *)
+        val venv' = foldr funvenv venv fundeclist
+
+        fun checkfundec({name, params, body, pos, result}) = 
+          let 
+            val result_ty = 
+              (case result of
+                  SOME(rt, pos') => transrt rt
+                | NONE => T.UNIT
+              )
+            val params' = map transparam params
+            fun enterparam ({name, ty}, venv) = S.enter(venv, name, Env.VarEntry{ty=ty, read_only=false})
+            val venv'' = foldl enterparam venv' params'
+            val body' = transExp (venv'', tenv, body)
+          in
+            if (isSameType(tenv, #ty body', result_ty, pos))   
+            then ()
+            else Err.error pos ("Function body type doesn't match return type in function " ^ S.name name); ()
+          end 
+          
+          (* Add functions to venv *)
+          fun addfunvenv (fundec, ()) = checkfundec fundec
+
+      in
+        foldl checkFunDecDuplicates [] fundeclist;
+        foldr addfunvenv () fundeclist;
+        {venv=venv', tenv=tenv}  (* Update venv and return *)
+      end 
     and updateenvs(dec, {venv, tenv}) = trdec(venv, tenv, dec)  (* used as function to update environments with declaractions *)
   in 
     foldl updateenvs {venv=venv, tenv=tenv} decs
