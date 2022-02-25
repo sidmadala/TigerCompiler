@@ -78,7 +78,7 @@ fun transExp(venv, tenv, exp) =
         | trexp(A.SeqExp([])) = {exp = (), ty = Types.UNIT}
         | trexp(A.SeqExp([(exp, pos)])) = trexp(exp)
         (* TODO: FIX BUG @zian *)
-        | trexp(A.SeqExp((exp, pos)::l)) = (trexp(exp); trexp(l))
+        | trexp(A.SeqExp((exp, pos)::l)) = (trexp(exp); trexp(A.SeqExp l))
         (* OpExp: check for type equality*)
         | trexp(A.OpExp{left, oper, right, pos}) = 
           (case oper of 
@@ -113,7 +113,7 @@ fun transExp(venv, tenv, exp) =
         if isSome(else')
         then 
             (* TODO: FIX TREXP VALOF @ZIAN *)
-            (if isSameType(tenv, #ty (trexp then'), #ty (trexp valOf(else')), pos)
+            (if isSameType(tenv, #ty (trexp then'), #ty (trexp (valOf(else'))), pos)
              then () else Err.error pos "then and else should return the same type";
              {exp = (), ty = #ty (trexp then')})
         else 
