@@ -70,20 +70,6 @@ fun isSameType(tenv, T.UNIT, T.UNIT, pos : Absyn.pos) = true
                                                       then ()
                                                       else Err.error pos errMsg
 
-(* Check for cycles in declarations *)
-fun checkIllegalCycle({name, ty, pos}, ()) = 
-  let
-    fun cycleHelper(observed, name) =
-      (case S.look(#tenv new_env, name) of
-            SOME(T.NAME(sym, _)) => if List.exists (fn elem => String.compare(S.name sym, S.name elem) = EQUAL) observed
-                                    then Err.error pos "error: cycle exists in declaration"
-                                    else cycleHelper(name::observed, sym)
-          | _ => ()
-      )
-  in
-    cycleHelper([], name)
-  end
-
 (* Checks for duplicate type declaration in tenv *)
 fun checkTyDecDuplicates({name, ty, pos}, observed) = 
   if List.exists (fn elem => String.compare(S.name name, elem) = EQUAL) observed
@@ -183,35 +169,39 @@ fun transExp(venv, tenv, exp) =
             else Err.error pos "error: array type and initializing exp differ";
             {exp=(), ty=actualTy(tenv, getTyFromSymbol(tenv, typ, pos))}
             )
-        (* | trexp (A.RecordExp({fields, typ, pos})) = 
+        | trexp (A.RecordExp({fields, typ, pos})) = 
           (case S.look(tenv, typ) of
-            SOME x => 
-              (case x of
-                T.RECORD(fieldList, _) => 
+            SOME ty => 
+              (case ty of
+                T.RECORD(genfields, _) => 
                   let 
-                    val recFormal: (S.symbol * Types.ty) list = (fieldList ())
+                    val recFields = genfields()
+                    (* val recFormal: (S.symbol * Types.ty) list = (fieldList ()) *)
+
                     fun getFieldType (name: string, []) = T.BOTTOM
                       | getFieldType (name: string, (sym, exp, pos)::l) =
                           if String.compare (name, S.name sym) = EQUAL
                           then #ty (trexp exp)
                           else getFieldType(name, l)
-                    fun checkFormal (sym, ty) =
-                      if not (T.leq(getFieldType(S.name sym, fields), ty))
-                      then Err.error pos ("actual type doesn't match formal type: " ^ S.name sym)
-                      else ()
-                    fun checkTypeValid((fieldname, typeid), ()) = 
-                      case S.look(tenv, typeid) of
-                          SOME x => (checkFormal (fieldname, x); ())
-                        | NONE => (Err.error pos ("unknown type in record: " ^ S.name typ); ())
+
+                    fun checkFields (sym, ty) =
+                      if (T.leq(getFieldType(S.name sym, fields), ty))
+                      then ()
+                      else Err.error pos ("error: actual type doesn't match formal type: " ^ S.name sym)
+
+                    fun checkRecordTypes((name, typ), ()) = 
+                        (case S.look(tenv, typ) of
+                            SOME(t) => (checkFields(name, t); ())
+                          | NONE => (Err.error pos ("error: unknown type"); ()))
                   in
-                    if List.length(recFormal) <> List.length(fields)
-                    then (Err.error pos ("record list is wrong length: " ^ S.name typ); {exp=(), ty=x})
-                    else (foldr checkTypeValid () recFormal; {exp=(), ty=x})
+                    if (List.length(recFields) = List.length(fields))
+                    then (foldr checkRecordTypes () recFields; {exp=(), ty=ty})
+                    else (Err.error pos ("error: record list is wrong length"); {exp=(), ty=ty})
                   end
-              | _ => (Err.error pos ("error: " ^ S.name typ ^ " given, expected record type"); {exp=(), ty=T.NIL})
+              | _ => (Err.error pos ("error: this is not a record"); {exp=(), ty=T.BOTTOM})
               )
-          | NONE => (Err.error pos ("error: " ^ S.name typ ^ " is an invalid record type"); {exp=(), ty=T.NIL})
-          ) *)
+          | NONE => (Err.error pos ("error: " ^ S.name typ ^ " does not exist as a record"); {exp=(), ty=T.BOTTOM})
+          )
       and trvar(A.SimpleVar(sym, pos)) =
         (case S.look(venv, sym) of
               SOME(Env.VarEntry({ty})) => {exp=(), ty= ty} 
@@ -270,9 +260,22 @@ and transDec(venv, tenv, decs) =
     | trdec(venv, tenv, A.TypeDec(tydeclist)) =
       let
         fun tydectempgenerator ({name, ty, pos}, tenv') = S.enter(tenv', name, T.BOTTOM)
-        val temptenv = foldl maketemptydec tenv tydeclist
+        val temptenv = foldl tydectempgenerator tenv tydeclist
         fun mergeenvs({name, ty, pos}, {venv, tenv}) = {venv=venv, tenv=S.enter(tenv, name, transTy(temptenv, ty))}
         val newenv = foldl mergeenvs {venv=venv, tenv=tenv} tydeclist
+        (* Check for cycles in declarations *)
+        fun checkIllegalCycle({name, ty, pos}, ()) = 
+          let
+            fun cycleHelper(observed, name) =
+              (case S.look(#tenv newenv, name) of
+                    SOME(T.NAME(sym, _)) => if List.exists (fn elem => String.compare(S.name sym, S.name elem) = EQUAL) observed
+                                            then Err.error pos "error: cycle exists in declaration"
+                                            else cycleHelper(name::observed, sym)
+                  | _ => ()
+              )
+          in
+            cycleHelper([], name)
+          end
       in
         foldl checkTyDecDuplicates [] tydeclist;
         foldl checkIllegalCycle () tydeclist;
@@ -311,7 +314,7 @@ and transDec(venv, tenv, decs) =
                 | NONE => T.UNIT
               )
             val params' = map transparam params
-            fun enterparam ({name, ty}, venv) = S.enter(venv, name, Env.VarEntry{ty=ty, read_only=false})
+            fun enterparam ({name, ty}, venv) = S.enter(venv, name, Env.VarEntry{ty=ty})
             val venv'' = foldl enterparam venv' params'
             val body' = transExp (venv'', tenv, body)
           in

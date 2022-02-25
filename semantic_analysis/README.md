@@ -41,8 +41,8 @@ exps:
 
 decs:
 - [x] vardec
-- [ ] typedec
-- [ ] fundec
+- [x] typedec
+- [x] fundec
 
 types:
 - [x] namety
