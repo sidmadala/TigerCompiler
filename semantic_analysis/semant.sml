@@ -78,7 +78,7 @@ fun transExp(venv, tenv, exp) =
         | trexp(A.SeqExp([])) = {exp = (), ty = Types.UNIT}
         | trexp(A.SeqExp([(exp, pos)])) = trexp(exp)
         (* TODO: FIX BUG @zian *)
-        | trexp(A.SeqExp((exp, pos)::l)) = (trexp(exp); trexp(l))
+        | trexp(A.SeqExp((exp, pos)::l)) = (trexp(exp); trexp(A.SeqExp l))
         (* OpExp: check for type equality*)
         | trexp(A.OpExp{left, oper, right, pos}) = 
           (case oper of 
@@ -113,7 +113,7 @@ fun transExp(venv, tenv, exp) =
         if isSome(else')
         then 
             (* TODO: FIX TREXP VALOF @ZIAN *)
-            (if isSameType(tenv, #ty (trexp then'), #ty (trexp valOf(else')), pos)
+            (if isSameType(tenv, #ty (trexp then'), #ty (trexp (valOf(else'))), pos)
              then () else Err.error pos "then and else should return the same type";
              {exp = (), ty = #ty (trexp then')})
         else 
@@ -152,7 +152,7 @@ fun transExp(venv, tenv, exp) =
             if isSameType(tenv, #ty (trexp(init)), getTyFromSymbol(tenv, typ, pos), pos)
             then ()
             else Err.error pos "error: array type and initializing exp differ";
-            {exp=(), ty=T.ARRAY(#ty (trexp(init)), unique)}
+            {exp=(), ty=T.ARRAY(#ty (trexp(init)), ref())}
             )
       and trvar(A.SimpleVar(sym, pos)) =
         (case S.look(venv, sym) of
@@ -187,27 +187,114 @@ fun transExp(venv, tenv, exp) =
       trexp(exp)
     end
 
-and transDec(venv, tenv, []) = {venv = venv, tenv = tenv}
-  | transDec(venv, tenv, A.VarDec{name, typ=NONE, init, ...}) = 
-      let val {exp, ty} = transExp(venv, tenv, init)
-      in {tenv=tenv, 
-          venv=S.enter(venv, name, E.VarEntry{ty=ty})}
-      end
-  | transDec(venv, tenv, A.TypeDec[{name,ty}]) = {venv=venv, tenv=S.enter(tenv, name, transTy(tenv,ty))}
-  | transDec(venv, tenv, A.FunctionDec[{name, params, body, pos, result=SOME(rt,pos)}]) =
-      let val SOME(result_ty) = S.look(tenv, rt)
-          fun transparam{name, typ, pos} = 
-            (case S.look(tenv, typ)
-              of SOME t => {name=name, ty=t})
-          val params' = map transparam params
-          val venv' = S.enter(venv, name, FunEntry{formals=map #ty params', result=result_ty})
-          fun enterparam({name, ty}, venv) = S.enter(venv, name, E.VarEntry{ty=ty})
-          val venv''= fold enterparam params' venv'
-      in 
-      transExp(venv'', tenv) body; 
-      {venv=venv',tenv=tenv} 
-      end
+and transDec(venv, tenv, decs) = 
+        let fun
+            trdec(venv, tenv, A.VarDec({name, escape, typ, init, pos})) =
+                let
+                  fun getType(SOME(ty)) = ty
+                    | getType(NONE) = T.BOTTOM
+                  fun actualTy ty = 
+                    case ty of
+                        T.NAME(name, tyRef) => actualTy(getType(S.look(tenv, name)))
+                      | someTy => someTy
+                in
+                    (
+                    case typ of
+                        SOME(symbol, pos) =>
+                            (case S.look(tenv, symbol) of
+                                SOME ty => (checkTyEq(actualTy ty, #ty (transExp(venv, tenv, init)), pos);
+                                           {venv=S.enter(venv, name, (Env.VarEntry{ty=actualTy ty, read_only=false})), tenv=tenv})
+                              | NONE => (Err.error pos "type not recognized"; {venv=venv, tenv=tenv})
+                            )
+                      | NONE =>
+                            let 
+                              val {exp, ty} = transExp(venv, tenv, init)
+                            in 
+                              if isSameType(tenv, ty, T.NIL, pos)
+                              then Err.error pos "error: initializing nil expressions not constrained by record type"
+                              else ();
+                              {venv=S.enter(venv, name, (Env.VarEntry{ty=ty, read_only=false})), tenv=tenv}
+                            end
+                    )
+                end
+          | trdec(venv, tenv, A.TypeDec(tydeclist)) =
+                let
+                  fun maketemptydec ({name, ty, pos}, tenv') = S.enter(tenv', name, T.BOTTOM)
+                  val temp_tenv = foldl maketemptydec tenv tydeclist
+                  fun foldtydec({name, ty, pos}, {venv, tenv}) = {venv=venv, tenv=S.enter(tenv, name, transTy(temp_tenv, ty))}
+                  val new_env = foldl foldtydec {venv=venv, tenv=tenv} tydeclist
 
+                  fun checkIllegalCycle({name, ty, pos}, ()) = 
+                  let
+                    fun checkHelper(seenList, name) =
+                      (
+                      case S.look(#tenv new_env, name) of
+                           SOME(T.NAME(symb, _)) => if List.exists (fn y => String.compare(S.name symb, S.name y) = EQUAL) seenList
+                                                    then Err.error pos "error: mutually recursive types thet do not pass through record or array - cycle"
+                                                    else checkHelper(name::seenList, symb)
+                         | _ => ()
+                      )
+                  in
+                    checkHelper([], name)
+                  end
+
+                  fun checkDuplicates({name, ty, pos}, seenList) = 
+                      if List.exists (fn y => String.compare(S.name name, y) = EQUAL) seenList
+                      then (Err.error pos "error : two types of same name in mutually recursive tydec"; seenList)
+                      else (S.name name)::seenList
+
+                in
+                  foldl checkDuplicates [] tydeclist;
+                  foldl checkIllegalCycle () tydeclist;
+                  new_env
+                end
+          | trdec(venv, tenv, A.FunctionDec(fundeclist)) =
+                let 
+                    fun transrt rt =
+                        (case S.look(tenv, rt) of 
+                            SOME(rt') => rt'
+                          | NONE => (Err.error 0 ("Return type unrecognized: " ^ S.name rt); T.BOTTOM)
+                        )
+                    fun transparam {name, escape, typ, pos} = 
+                        (case S.look(tenv, typ) of
+                            SOME t => {name=name, ty=t}
+                          | NONE => (Err.error 0 ("Parameter type unrecognized: " ^ S.name typ); {name=name, ty=T.BOTTOM})
+                        )
+                    fun enterFuncs ({name, params, body, pos, result=SOME(rt, pos')}, venv) = 
+                            S.enter(venv, name, Env.FunEntry{formals= map #ty (map transparam params), result=transrt rt})
+                      | enterFuncs ({name, params, body, pos, result=NONE}, venv) = 
+                            S.enter(venv, name, Env.FunEntry{formals= map #ty (map transparam params), result=T.UNIT})
+                    val venv' = foldr enterFuncs venv fundeclist
+                    fun checkfundec({name, params, body, pos, result}) = 
+                        let 
+                            val result_ty = 
+                                (case result of
+                                    SOME(rt, pos') => transrt rt
+                                  | NONE => T.UNIT
+                                )
+                            val params' = map transparam params
+                            fun enterparam ({name, ty}, venv) = S.enter(venv, name, Env.VarEntry{ty=ty, read_only=false})
+                            val venv'' = foldl enterparam venv' params'
+                            val body' = transExp (venv'', tenv, body)
+                        in
+                            if not (isSameType(tenv, (#ty body'), result_ty, pos))
+                            then Err.error pos ("Function body type doesn't match return type in function " ^ S.name name)
+                            else ()
+                        end 
+                    fun foldfundec (fundec, ()) = checkfundec fundec
+                    fun checkDuplicates({name, params, body, pos, result}, seenList) = 
+                        if List.exists (fn y => String.compare(S.name name, y) = EQUAL) seenList
+                        then (Err.error pos "error : two types of same name in mutually recursive fundec"; seenList)
+                        else (S.name name)::seenList
+                in
+                    foldl checkDuplicates [] fundeclist;
+                    foldr foldfundec () fundeclist;
+                    {venv=venv', tenv=tenv}
+                end
+            and folddec(dec, {venv, tenv}) = trdec(venv, tenv, dec)
+        in
+            foldl folddec {venv=venv, tenv=tenv} decs
+        end
 and transTy(tenv, ty) =
   let 
     fun trty(tenv, A.NameTy (name, _)) = 
