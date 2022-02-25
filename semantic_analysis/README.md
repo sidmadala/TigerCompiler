@@ -29,10 +29,10 @@ exps:
 - [x] varexp, nilexp, intexp, stringexp
 - [x] opexp
 - [ ] callexp
-- [ ] seqexp
+- [x] seqexp
 - [ ] assignexp
 - [ ] ifexp
-- [ ] whileexp
+- [x] whileexp
 - [ ] forexp
 - [X] breakexp
 - [x] letexp
@@ -41,13 +41,13 @@ exps:
 
 decs:
 - [x] vardec
-- [ ] typedec
+- [x] typedec
 - [ ] fundec
 
 types:
-- [ ] namety
+- [x] namety
 - [ ] recordty
-- [ ] arrayty
+- [x] arrayty
 
 Potential Issues
 - [x] Escapes inside parser module (set to false)

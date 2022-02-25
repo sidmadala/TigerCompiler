@@ -36,7 +36,7 @@ fun typeExtractor(tenv, T.NAME(sym, uniqueOpt), pos) =
 fun getTyFromSymbol(tenv, sym, pos) = 
       case S.look(tenv, sym) of 
         SOME(typ) => typeExtractor(tenv, typ, pos)
-        | NONE => (ErrorMsg.error pos ("type not yet defined"); T.INT)
+        | NONE => (ErrorMsg.error pos ("type not yet defined"); T.BOTTOM)
 
 fun checkInt({exp=_, ty=T.INT}, pos) = ()
     | checkInt ({exp=_, ty=_ }, pos) = Err.error pos "error: not an integer"
@@ -68,10 +68,10 @@ fun isSameType(tenv, T.UNIT, T.UNIT, pos : Absyn.pos) = true
   | isSameType(tenv, ty1, ty2, pos) = false
 
 (* Checks for duplicate type declaration in tenv *)
-fun checkTyDecDuplicates({name, ty, pos}, observed) = 
-  if List.exists (fn elem => String.compare(S.name name, elem) = EQUAL) observed
-  then (Err.error pos "error : duplicate types in mutually recursive tydec"; observed)
-  else (S.name name)::observed
+fun checkTyDecDuplicates({name, ty, pos}, seen) = 
+  if List.exists (fn elem => String.compare(S.name name, elem) = EQUAL) seen
+  then (Err.error pos "error : duplicate types"; seen)
+  else (S.name name)::seen
 
 (* Checks for duplicate type declaration in fundeclist *)
 fun checkFunDecDuplicates({name, params, body, pos, result}, observed) = 
@@ -172,7 +172,6 @@ fun transExp(venv, tenv, exp) =
                 T.RECORD(genfields, _) => 
                   let 
                     val recFields = genfields()
-                    (* val recFormal: (S.symbol * Types.ty) list = (fieldList ()) *)
 
                     fun getFieldType (name: string, []) = T.BOTTOM
                       | getFieldType (name: string, (sym, exp, pos)::l) =
@@ -181,7 +180,7 @@ fun transExp(venv, tenv, exp) =
                           else getFieldType(name, l)
 
                     fun checkFields (sym, ty) =
-                      if (T.leq(getFieldType(S.name sym, fields), ty))
+                      if (checkTyCompatible(getFieldType(S.name sym, fields), ty, pos) = ())
                       then ()
                       else Err.error pos ("error: actual type doesn't match formal type: " ^ S.name sym)
 
@@ -200,7 +199,8 @@ fun transExp(venv, tenv, exp) =
           )
       and trvar(A.SimpleVar(sym, pos)) =
         (case S.look(venv, sym) of
-              SOME(Env.VarEntry({ty})) => {exp=(), ty= actualTy(tenv, ty)} 
+              SOME(Env.VarEntry({ty})) => {exp=(), ty= actualTy(tenv, ty)}
+            | SOME(_) => (Err.error pos ("error: variable is a function name?" ^ S.name sym); {exp=(), ty= T.BOTTOM})
             | NONE => (Err.error pos ("error: undefined variable" ^ S.name sym); {exp=(), ty= T.BOTTOM})
         )
         | trvar(A.FieldVar(var, sym, pos)) = 
@@ -253,58 +253,52 @@ and transDec(venv, tenv, decs) =
       )
     | trdec(venv, tenv, A.TypeDec(tydeclist)) =
       let
-        fun tydectempgenerator ({name, ty, pos}, tenv') = S.enter(tenv', name, T.BOTTOM)
-        val temptenv = foldl tydectempgenerator tenv tydeclist
-        fun mergeenvs({name, ty, pos}, {venv, tenv}) = {venv=venv, tenv=S.enter(tenv, name, transTy(temptenv, ty))}
-        val newenv = foldl mergeenvs {venv=venv, tenv=tenv} tydeclist
-        (* Check for cycles in declarations *)
+        val temp_tenv = foldl (fn ({name, ty, pos}, tenv') => S.enter(tenv', name, T.BOTTOM)) tenv tydeclist
+        fun merge_tenvs({name, ty, pos}, {venv, tenv}) = {venv=venv, tenv=S.enter(tenv, name, transTy(temp_tenv, ty))}
+        val new_tenv = foldl merge_tenvs {venv=venv, tenv=tenv} tydeclist
+
+        (* checking for cycles in declarations *)
         fun checkIllegalCycle({name, ty, pos}, ()) = 
           let
-            fun cycleHelper(observed, name) =
-              (case S.look(#tenv newenv, name) of
-                    SOME(T.NAME(sym, _)) => if List.exists (fn elem => String.compare(S.name sym, S.name elem) = EQUAL) observed
-                                            then Err.error pos "error: cycle exists in declaration"
-                                            else cycleHelper(name::observed, sym)
-                  | _ => ()
+            fun cycleHelper(seen, curr) =
+              (case S.look(#tenv new_tenv, curr) of
+                    SOME(T.NAME(sym,_)) => if List.exists (fn elem => String.compare(S.name sym, S.name elem) = EQUAL) seen
+                                            then Err.error pos "error: cycle exists in type declarations"
+                                            else cycleHelper(curr::seen, sym)
+                  | _ => Err.error pos "error: this should never happen"
               )
           in
             cycleHelper([], name)
           end
+
       in
         foldl checkTyDecDuplicates [] tydeclist;
         foldl checkIllegalCycle () tydeclist;
-        newenv
+        new_tenv
       end
 
     | trdec(venv, tenv, A.FunctionDec(fundeclist)) =
       let 
-        fun transrt rt =
-          (case S.look(tenv, rt) of 
-              SOME(rt') => rt'
-            | NONE => (Err.error 0 ("Return type unrecognized: " ^ S.name rt); T.BOTTOM)
-          )   (* Similar to trty of NameTy but must return the return type of the function *)
-
-        (* Similar to trty of NameTy but must return the param type of the function *)
         fun transparam {name, escape, typ, pos} = 
           (case S.look(tenv, typ) of
-              SOME t => {name=name, ty=t}
+              SOME(t) => {name=name, ty=t}
             | NONE => (Err.error 0 ("Parameter type unrecognized: " ^ S.name typ); {name=name, ty=T.BOTTOM})
-          )
+          )         (* Like getTyFromSymbol but takes in param fields and returns the param type of the function *)
 
         (* Place function into venv *)
         fun funvenv ({name, params, body, pos, result=SOME(rt, pos')}, venv) = 
-              S.enter(venv, name, Env.FunEntry{formals= map #ty (map transparam params), result=transrt rt})
-          | funvenv ({name, params, body, pos, result=NONE}, venv) =   (* Some functions are void and do not have return values *)
+              S.enter(venv, name, Env.FunEntry{formals= map #ty (map transparam params), result=getTyFromSymbol(tenv,rt,pos')})
+          | funvenv ({name, params, body, pos, result=NONE}, venv) =   (* Some functions are void and do not have return values (procedures) *)
               S.enter(venv, name, Env.FunEntry{formals= map #ty (map transparam params), result=T.UNIT})
        
-        (* Temp venv for fundeclist => added to actual venv later *)
+        (* Temp venv for fundeclist => added to actual venv later so that programs can call these funcs*)
         val venv' = foldr funvenv venv fundeclist
 
         fun checkfundec({name, params, body, pos, result}) = 
           let 
             val result_ty = 
               (case result of
-                  SOME(rt, pos') => transrt rt
+                  SOME(rt, pos') => getTyFromSymbol(tenv, rt, pos')
                 | NONE => T.UNIT
               )
             val params' = map transparam params
@@ -335,21 +329,22 @@ and transTy(tenv, ty) =
     fun trty(tenv, A.NameTy (name, _)) = 
       (case S.look(tenv, name) of
         SOME _ => T.NAME(name, ref(NONE))
-      | NONE => (Err.error 0 ("error: unrecognized name type: " ^ S.name name); T.NAME(name, ref(NONE)))
+      | NONE => (Err.error 0 ("error: unrecognized name type: " ^ S.name name); T.BOTTOM)
       )    
     | trty(tenv, A.RecordTy(fields)) = 
         let 
-          fun trfields {name, escape, typ, pos} =
+          fun trfields({name, escape, typ, pos}) =
             case S.look(tenv, typ) of
               SOME(ty) => (name, ty)
-            | NONE => (Err.error pos ("error: undefined type in record field: " ^ S.name typ); (name, T.NIL))  
-            fun fieldGen() = foldl (fn (a, b) => trfields(a)::b) [] fields
+            | NONE => (Err.error pos ("error: undefined type in record field: " ^ S.name typ); (name, T.BOTTOM))  
+            fun genFields() = foldl (fn (a, b) => trfields(a)::b) [] fields
         in 
-            fieldGen();
-            T.RECORD (fieldGen, ref ())
+            (* QUESTION: why are we running genfields first?? does that make sense? *)
+            genFields();
+            T.RECORD (genFields, ref ())
         end
     | trty(tenv, A.ArrayTy(sym, pos)) = 
-        T.ARRAY (transTy (tenv, A.NameTy (sym, pos)), ref ()) (* FIX: may need to call less scoped function *)
+        T.ARRAY (transTy (tenv, A.NameTy (sym, pos)), ref ())
   in
     trty(tenv, ty)
   end
