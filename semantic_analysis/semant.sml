@@ -179,18 +179,13 @@ fun transExp(venv, tenv, exp) =
                           then #ty (trexp exp)
                           else getFieldType(name, l)
 
-                    fun checkFields (sym, ty) =
+                    fun checkFields ((sym, ty), ()) =
                       if (checkTyCompatible(getFieldType(S.name sym, fields), ty, pos) = ())
                       then ()
                       else Err.error pos ("error: actual type doesn't match formal type: " ^ S.name sym)
-
-                    fun checkRecordTypes((name, typ), ()) = 
-                        (case S.look(tenv, typ) of
-                            SOME(t) => (checkFields(name, t); ())
-                          | NONE => (Err.error pos ("error: unknown type"); ()))
                   in
                     if (List.length(recFields) = List.length(fields))
-                    then (foldr checkRecordTypes () recFields; {exp=(), ty=ty})
+                    then (foldr checkFields () recFields; {exp=(), ty=ty})
                     else (Err.error pos ("error: record list is wrong length"); {exp=(), ty=T.BOTTOM})
                   end
               | _ => (Err.error pos ("error: this is not a record"); {exp=(), ty=T.BOTTOM})
