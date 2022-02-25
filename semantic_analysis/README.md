@@ -22,32 +22,32 @@ TODO:
 
 vars:
 - [x] simple
-- [x] field
-- [x] subscript
+- [ ] field
+- [ ] subscript
 
 exps:
 - [x] varexp, nilexp, intexp, stringexp
 - [x] opexp
-- [x] callexp
-- [x] seqexp
-- [x] assignexp
-- [x] ifexp
-- [x] whileexp
-- [x] forexp
-- [x] breakexp
+- [ ] callexp
+- [ ] seqexp
+- [ ] assignexp
+- [ ] ifexp
+- [ ] whileexp
+- [ ] forexp
+- [X] breakexp
 - [x] letexp
-- [x] arrayexp
+- [ ] arrayexp
 - [ ] recordexp
 
 decs:
 - [x] vardec
-- [x] typedec
-- [x] fundec
+- [ ] typedec
+- [ ] fundec
 
 types:
-- [x] namety
-- [x] recordty
-- [x] arrayty
+- [ ] namety
+- [ ] recordty
+- [ ] arrayty
 
 Potential Issues
-- [] Escapes inside parser module
+- [x] Escapes inside parser module (set to false)

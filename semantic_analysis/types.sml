@@ -12,35 +12,5 @@ struct
 	  | UNIT
     | BOTTOM
 
-  (* Types returned by comparison in lattice *)
-  datatype comp = 
-    LT
-  | GT
-  | EQ
-  | INCOMP (* incomparable *)
-
-  (* Type lattice for comparison operator *)
-  fun leq(BOTTOM, _) = true
-    | leq(_, UNIT) = true
-    | leq(NIL, RECORD(_)) = true
-    | leq(INT, INT) = true
-    | leq(STRING, STRING) = true
-    | leq(RECORD(_, unique1), RECORD(_, unique2)) = (unique1 = unique2)
-    | leq(ARRAY(_, unique1), ARRAY(_, unique2)) = (unique1 = unique2)
-    | leq(NIL, NIL) = true
-    | leq(NAME(sym1, _), NAME(sym2, _)) = String.compare(Symbol.name sym1, Symbol.name sym2) = EQUAL
-    | leq(_, _) = false
-
-  (* Comparison operator for types *)
-  fun comp(t1, t2) = 
-    if leq(t1, t2) andalso leq(t2, t1)
-      then EQ
-    else if leq(t1, t2)
-      then LT
-    else if leq(t2, t1)
-      then GT
-    else
-      INCOMP
-
 end
 

@@ -45,16 +45,17 @@ fun checkTyComp({exp=_, ty = T.INT}, {exp=_, ty = T.INT}, pos) = ()
   | checkTyComp({exp=_, ty = T.STRING}, {exp=_, ty = T.STRING}, pos) = ()
   | checkTyComp(_, _, pos) = Err.error pos "error: not comparable"
 
-fun checkTyEq({exp=_, ty = T.INT}, {exp, ty = T.INT}, pos) = ()
-  | checkTyEq({exp=_, ty = T.STRING}, {exp, ty = T.STRING}, pos) = ()
-  | checkTyEq({exp=_, ty = T.UNIT}, {exp, ty = T.UNIT}, pos) = ()
-  | checkTyEq({exp=_, ty = T.RECORD(_)}, {exp, ty = T.NIL}, pos) = ()
-  | checkTyEq({exp=_, ty = T.NIL}, {exp, ty = T.RECORD(_)}, pos) = ()
-  | checkTyEq({exp=_, ty = T.RECORD(_, u1)}, {exp, ty = T.RECORD(_, u2)}, pos) =
+fun checkTyCompatible(T.INT, T.INT, pos) = ()
+  | checkTyCompatible(T.STRING, T.STRING, pos) = ()
+  | checkTyCompatible(T.UNIT, T.UNIT, pos) = ()
+  | checkTyCompatible(T.RECORD(_), T.NIL, pos) = ()
+  | checkTyCompatible(_, T.BOTTOM, pos) = ()
+  | checkTyCompatible(T.UNIT,_, pos) = ()
+  | checkTyCompatible(T.RECORD(_, u1), T.RECORD(_, u2), pos) =
     if u1 = u2 then () else Err.error pos "error: record types mismatch"
-  | checkTyEq({exp=_, ty = T.ARRAY(_, u1)}, {exp, ty = T.ARRAY(_, u2)}, pos) =
+  | checkTyCompatible(T.ARRAY(_, u1), T.ARRAY(_, u2), pos) =
     if u1 = u2 then () else Err.error pos "error: array types mismatch"
-  | checkTyEq(_, _, pos) = Err.error pos "error: types not equal"
+  | checkTyCompatible(_, _, pos) = Err.error pos "error: types not compatible"
 
 fun isSameType(tenv, T.UNIT, T.UNIT, pos : Absyn.pos) = true
   | isSameType(tenv, T.INT, T.INT, pos) = true
@@ -65,10 +66,6 @@ fun isSameType(tenv, T.UNIT, T.UNIT, pos : Absyn.pos) = true
   | isSameType(tenv, T.ARRAY(_, u1), T.ARRAY(_, u2), pos) = (u1 = u2)
   | isSameType(tenv, T.NAME(s1, _), T.NAME(s2, _), pos) = String.compare(S.name s1, S.name s2) = EQUAL
   | isSameType(tenv, ty1, ty2, pos) = false
-
-  fun checkTypesAssignable (var, value, pos, errMsg) = if T.comp(var, value) = T.EQ orelse T.comp(var, value) = T.GT
-                                                      then ()
-                                                      else Err.error pos errMsg
 
 (* Checks for duplicate type declaration in tenv *)
 fun checkTyDecDuplicates({name, ty, pos}, observed) = 
@@ -101,8 +98,8 @@ fun transExp(venv, tenv, exp) =
             | A.MinusOp => (checkInt(trexp left, pos); checkInt(trexp right, pos); {exp=(), ty=T.INT})
             | A.TimesOp => (checkInt(trexp left, pos); checkInt(trexp right, pos); {exp=(), ty=T.INT})
             | A.DivideOp => (checkInt(trexp left, pos); checkInt(trexp right, pos); {exp=(), ty=T.INT})
-            | A.EqOp => (checkTyEq(trexp left, trexp right, pos); {exp=(), ty=T.INT})
-            | A.NeqOp => (checkTyEq(trexp left, trexp right, pos); {exp=(), ty=T.INT})
+            | A.EqOp => (checkTyCompatible(#ty(trexp left), #ty(trexp right), pos); {exp=(), ty=T.INT})
+            | A.NeqOp => (checkTyCompatible(#ty(trexp left), #ty(trexp right), pos); {exp=(), ty=T.INT})
             | A.LtOp => (checkTyComp(trexp left, trexp right, pos); {exp=(), ty=T.INT})
             | A.LeOp => (checkTyComp(trexp left, trexp right, pos); {exp=(), ty=T.INT})
             | A.GtOp => (checkTyComp(trexp left, trexp right, pos); {exp=(), ty=T.INT})
@@ -147,19 +144,18 @@ fun transExp(venv, tenv, exp) =
         (* 1. S.look if function exists
         2. check if argument typing works out  *)
           (let 
-          fun getTypeFromExp({exp=_, ty=someTy}) = someTy
-          fun checkFunParams(f::formals, a::args, pos) = 
-                if isSameType(tenv, f, getTypeFromExp(trexp a), pos) 
-                then checkFunParams(formals, args, pos) 
-                else (Err.error pos "error: argument mismatch"; ())
-              | checkFunParams([], a::args, pos) = (Err.error pos "error: too many arguments given"; ())
-              | checkFunParams(f::formals, [], pos) = (Err.error pos "error: not enough arguments given"; ())
-              | checkFunParams([], [], pos) = ()
+            fun checkFunParams(f::formals, a::args, pos) = 
+                  if isSameType(tenv, f, #ty (trexp a), pos) 
+                  then checkFunParams(formals, args, pos) 
+                  else (Err.error pos "error: argument mismatch"; ())
+                | checkFunParams([], a::args, pos) = (Err.error pos "error: too many arguments given"; ())
+                | checkFunParams(f::formals, [], pos) = (Err.error pos "error: not enough arguments given"; ())
+                | checkFunParams([], [], pos) = ()
           in 
             case S.look(venv, func) of
               SOME(Env.FunEntry({formals, result})) => (checkFunParams(formals, args, pos); {exp=(), ty=result})
-              | SOME(_) => (Err.error pos "error: why this is not a function (does this happen? idk)"; {exp=(), ty=T.UNIT})
-              | NONE => (Err.error pos "error: function not declared"; {exp=(), ty=T.UNIT})
+              | SOME(_) => (Err.error pos "error: not a function, but a var?"; {exp=(), ty=T.BOTTOM})
+              | NONE => (Err.error pos "error: function not declared"; {exp=(), ty=T.BOTTOM})
           end
           )
         | trexp(A.ArrayExp({typ, size, init, pos})) =
@@ -196,7 +192,7 @@ fun transExp(venv, tenv, exp) =
                   in
                     if (List.length(recFields) = List.length(fields))
                     then (foldr checkRecordTypes () recFields; {exp=(), ty=ty})
-                    else (Err.error pos ("error: record list is wrong length"); {exp=(), ty=ty})
+                    else (Err.error pos ("error: record list is wrong length"); {exp=(), ty=T.BOTTOM})
                   end
               | _ => (Err.error pos ("error: this is not a record"); {exp=(), ty=T.BOTTOM})
               )
@@ -204,9 +200,8 @@ fun transExp(venv, tenv, exp) =
           )
       and trvar(A.SimpleVar(sym, pos)) =
         (case S.look(venv, sym) of
-              SOME(Env.VarEntry({ty})) => {exp=(), ty= ty} 
-            | SOME(Env.FunEntry({formals, result})) => {exp=(), ty= result} 
-            | NONE => (Err.error pos ("error: variable not declared" ^ S.name sym); {exp=(), ty= T.BOTTOM})
+              SOME(Env.VarEntry({ty})) => {exp=(), ty= actualTy(tenv, ty)} 
+            | NONE => (Err.error pos ("error: undefined variable" ^ S.name sym); {exp=(), ty= T.BOTTOM})
         )
         | trvar(A.FieldVar(var, sym, pos)) = 
             (case trvar var of 
@@ -241,8 +236,11 @@ and transDec(venv, tenv, decs) =
       (case typ of 
         SOME(sym, pos) => 
           (case (S.look(tenv, sym)) of
-            SOME(t : T.ty) => (checkTypesAssignable(actualTy(tenv, t), #ty (transExp(venv, tenv, init)), pos, "error : mismatched types in vardec");
-                              {venv=S.enter(venv, name, (Env.VarEntry{ty=actualTy(tenv, t)})), tenv=tenv})
+            SOME(t : T.ty) => 
+                    (if checkTyCompatible(actualTy(tenv, t), #ty (transExp(venv, tenv, init)), pos) = ()
+                    then ()
+                    else Err.error pos "error : mismatched types in vardec";
+                    {venv=S.enter(venv, name, (Env.VarEntry{ty=actualTy(tenv, t)})), tenv=tenv})
           | NONE => (Err.error pos ("error: type " ^ S.name sym ^ " not recognized or declared");
                     {venv=venv, tenv=tenv})
           )
@@ -250,10 +248,6 @@ and transDec(venv, tenv, decs) =
         let
           val {exp, ty} = transExp(venv, tenv, init)
         in
-          (* TODO: Check if error should not do an add to venv *)
-          if isSameType(tenv, ty, T.NIL, pos)
-          then (Err.error pos "error: type cannot be nil unless in record type")
-          else ();
           {venv = S.enter(venv, name, (Env.VarEntry{ty=ty})), tenv=tenv}
         end
       )
@@ -349,11 +343,10 @@ and transTy(tenv, ty) =
             case S.look(tenv, typ) of
               SOME(ty) => (name, ty)
             | NONE => (Err.error pos ("error: undefined type in record field: " ^ S.name typ); (name, T.NIL))  
-            (* TODO: fix one of these things idk what's wrong @MICHELLE *)
-            fun recGen() = foldl (fn (a, b) => trfields(a)::b) [] fields
+            fun fieldGen() = foldl (fn (a, b) => trfields(a)::b) [] fields
         in 
-            recGen();
-            T.RECORD (recGen, ref ())
+            fieldGen();
+            T.RECORD (fieldGen, ref ())
         end
     | trty(tenv, A.ArrayTy(sym, pos)) = 
         T.ARRAY (transTy (tenv, A.NameTy (sym, pos)), ref ()) (* FIX: may need to call less scoped function *)
