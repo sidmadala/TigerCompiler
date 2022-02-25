@@ -40,7 +40,7 @@ exps:
 - [ ] recordexp
 
 decs:
-- [ ] vardec
+- [x] vardec
 - [ ] typedec
 - [ ] fundec
 
