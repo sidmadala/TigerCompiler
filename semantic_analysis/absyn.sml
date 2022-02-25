@@ -47,6 +47,9 @@ withtype field = {name: symbol, escape: bool ref,
 		   result: (symbol * pos) option,
 		   body: exp,
 		   pos: pos}
-     
+
+fun printTy(ArrayTy(sym, pos)) = print ("this is an arrayty with symbol:"^Symbol.name sym^" ")
+        |printTy(RecordTy(fields)) = print ("this is a record. ")
+        |printTy(NameTy(sym, pos)) = print ("this is a name with symbol: "^Symbol.name sym^" ")
 end
         

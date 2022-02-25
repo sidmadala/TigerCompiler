@@ -15,6 +15,17 @@ val loopLevel = ref 0
 fun incLoopLevel() = loopLevel := !loopLevel + 1
 fun decLoopLevel() = loopLevel := !loopLevel - 1
 
+fun printType ty =
+  case ty of
+        T.RECORD(_, _) => print "type is record\n"
+      | T.NIL => print "type is nil\n"
+      | T.INT => print "type is int\n"
+      | T.STRING => print "type is string\n"
+      | T.ARRAY(arrTy, _) => (print "array of: "; printType arrTy)
+      | T.NAME(sym, _) => print ("name type is " ^ Symbol.name sym ^ "\n")
+      | T.UNIT => print "type is unit\n"
+      | T.BOTTOM => print "type is bottom\n"
+
 (* helper functions *)
 fun getType(SOME(ty)) = ty
     | getType(NONE) = T.BOTTOM
@@ -35,7 +46,7 @@ fun typeExtractor(tenv, T.NAME(sym, uniqueOpt), pos) =
 
 fun getTyFromSymbol(tenv, sym, pos) = 
       case S.look(tenv, sym) of 
-        SOME(typ) => typeExtractor(tenv, typ, pos)
+        SOME(typ) => (typeExtractor(tenv, typ, pos))
         | NONE => (ErrorMsg.error pos ("type not yet defined"); T.BOTTOM)
 
 fun checkInt({exp=_, ty=T.INT}, pos) = ()
@@ -159,12 +170,15 @@ fun transExp(venv, tenv, exp) =
           end
           )
         | trexp(A.ArrayExp({typ, size, init, pos})) =
-            (checkInt(trexp size, pos);
-            if isSameType(tenv, #ty (trexp(init)), getTyFromSymbol(tenv, typ, pos), pos)
-            then ()
-            else Err.error pos "error: array type and initializing exp differ";
-            {exp=(), ty=actualTy(tenv, getTyFromSymbol(tenv, typ, pos))}
-            )
+            (case getTyFromSymbol(tenv, typ, pos) of 
+              (T.ARRAY(ty, unique)) => 
+                (checkInt(trexp size, pos);
+                if isSameType(tenv, #ty (trexp(init)), actualTy(tenv, ty), pos)
+                then ()
+                else Err.error pos "error: array type and initializing exp differ";
+                {exp=(), ty=actualTy(tenv, getTyFromSymbol(tenv, typ, pos))}
+                )
+              |_ => (Err.error pos "error: not an array"; {exp=(), ty=T.BOTTOM}))
         | trexp (A.RecordExp({fields, typ, pos})) = 
           (case S.look(tenv, typ) of
             SOME ty => 
@@ -249,7 +263,7 @@ and transDec(venv, tenv, decs) =
     | trdec(venv, tenv, A.TypeDec(tydeclist)) =
       let
         val temp_tenv = foldl (fn ({name, ty, pos}, tenv') => S.enter(tenv', name, T.BOTTOM)) tenv tydeclist
-        fun merge_tenvs({name, ty, pos}, {venv, tenv}) = {venv=venv, tenv=S.enter(tenv, name, transTy(temp_tenv, ty))}
+        fun merge_tenvs({name, ty, pos}, {venv, tenv}) = ({venv=venv, tenv=S.enter(tenv, name, transTy(temp_tenv, ty))})
         val new_tenv = foldl merge_tenvs {venv=venv, tenv=tenv} tydeclist
 
         (* checking for cycles in declarations *)
@@ -321,10 +335,10 @@ and transDec(venv, tenv, decs) =
 
 and transTy(tenv, ty) =
   let 
-    fun trty(tenv, A.NameTy (name, _)) = 
+    fun trty(tenv, A.NameTy(name, _)) = 
       (case S.look(tenv, name) of
         SOME _ => T.NAME(name, ref(NONE))
-      | NONE => (Err.error 0 ("error: unrecognized name type: " ^ S.name name); T.BOTTOM)
+      | NONE => (Err.error 0 ("error: unrecognized name type: " ^ S.name name); T.NAME(name, ref(NONE)))
       )    
     | trty(tenv, A.RecordTy(fields)) = 
         let 
@@ -339,7 +353,7 @@ and transTy(tenv, ty) =
             T.RECORD (genFields, ref ())
         end
     | trty(tenv, A.ArrayTy(sym, pos)) = 
-        T.ARRAY (transTy (tenv, A.NameTy (sym, pos)), ref ())
+        T.ARRAY((transTy(tenv, A.NameTy(sym, pos))), ref ())
   in
     trty(tenv, ty)
   end
