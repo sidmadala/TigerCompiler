@@ -40,11 +40,14 @@ exps:
 - [ ] recordexp
 
 decs:
-- [ ] fundec
 - [ ] vardec
 - [ ] typedec
+- [ ] fundec
 
 types:
 - [x] namety
 - [x] recordty
 - [x] arrayty
+
+Potential Issues
+- [] Escapes inside parser module

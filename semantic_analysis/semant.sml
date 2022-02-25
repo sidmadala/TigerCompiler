@@ -63,9 +63,12 @@ fun isSameType(tenv, T.UNIT, T.UNIT, pos : Absyn.pos) = true
   | isSameType(tenv, T.RECORD(_), T.UNIT, pos) = true
   | isSameType(tenv, T.UNIT, T.RECORD(_), pos) = true
   | isSameType(tenv, T.ARRAY(_, u1), T.ARRAY(_, u2), pos) = (u1 = u2)
-  | isSameType(tenv, T.NAME(s1, _), T.NAME(s2, _), pos) = String.compare(S.name
-  s1, S.name s2) = EQUAL
+  | isSameType(tenv, T.NAME(s1, _), T.NAME(s2, _), pos) = String.compare(S.name s1, S.name s2) = EQUAL
   | isSameType(tenv, ty1, ty2, pos) = false
+
+  fun checkTypesAssignable (var, value, pos, errMsg) = if T.comp(var, value) = T.EQ orelse T.comp(var, value) = T.GT
+                                                      then ()
+                                                      else Err.error pos errMsg
 
 (* beginning of main transExp function *)
 fun transExp(venv, tenv, exp) =
@@ -154,6 +157,35 @@ fun transExp(venv, tenv, exp) =
             else Err.error pos "error: array type and initializing exp differ";
             {exp=(), ty=actualTy(tenv, getTyFromSymbol(tenv, typ, pos))}
             )
+        (* | trexp (A.RecordExp({fields, typ, pos})) = 
+          (case S.look(tenv, typ) of
+            SOME x => 
+              (case x of
+                T.RECORD(fieldList, _) => 
+                  let 
+                    val recFormal: (S.symbol * Types.ty) list = (fieldList ())
+                    fun getFieldType (name: string, []) = T.BOTTOM
+                      | getFieldType (name: string, (sym, exp, pos)::l) =
+                          if String.compare (name, S.name sym) = EQUAL
+                          then #ty (trexp exp)
+                          else getFieldType(name, l)
+                    fun checkFormal (sym, ty) =
+                      if not (T.leq(getFieldType(S.name sym, fields), ty))
+                      then Err.error pos ("actual type doesn't match formal type: " ^ S.name sym)
+                      else ()
+                    fun checkTypeValid((fieldname, typeid), ()) = 
+                      case S.look(tenv, typeid) of
+                          SOME x => (checkFormal (fieldname, x); ())
+                        | NONE => (Err.error pos ("unknown type in record: " ^ S.name typ); ())
+                  in
+                    if List.length(recFormal) <> List.length(fields)
+                    then (Err.error pos ("record list is wrong length: " ^ S.name typ); {exp=(), ty=x})
+                    else (foldr checkTypeValid () recFormal; {exp=(), ty=x})
+                  end
+              | _ => (Err.error pos ("error: " ^ S.name typ ^ " given, expected record type"); {exp=(), ty=T.NIL})
+              )
+          | NONE => (Err.error pos ("error: " ^ S.name typ ^ " is an invalid record type"); {exp=(), ty=T.NIL})
+          ) *)
       and trvar(A.SimpleVar(sym, pos)) =
         (case S.look(venv, sym) of
               SOME(Env.VarEntry({ty})) => {exp=(), ty= ty} 
@@ -187,29 +219,32 @@ fun transExp(venv, tenv, exp) =
       trexp(exp)
     end
 
-and transDec(venv, tenv, []) = {venv = venv, tenv = tenv}
-  | transDec(venv, tenv, A.VarDec{name, typ=NONE, init, ...}) = 
-      let 
-        val {exp, ty} = transExp(venv, tenv, init)
-      in 
-        {tenv=tenv, venv=S.enter(venv, name, E.VarEntry{ty=ty})}
-      end
-      (* TODO: make it so that it can handle more than just one dec *)
-  | transDec(venv, tenv, A.TypeDec[{name,ty,pos}]) = 
-      {venv=venv, tenv=S.enter(tenv, name, transTy(tenv,ty))}
-  | transDec(venv, tenv, A.FunctionDec[{name, params, body, pos, result=SOME(rt,pos1)}]) =
-      let val SOME(result_ty) = S.look(tenv, rt)
-          fun transparam{name, typ, pos} = 
-            (case S.look(tenv, typ)
-              of SOME t => {name=name, ty=t})
-          val params' = map transparam params
-          val venv' = S.enter(venv, name, E.FunEntry{formals=map #ty params', result=result_ty})
-          fun enterparam({name, ty}, venv) = S.enter(venv, name, E.VarEntry{ty=ty})
-          val venv''= foldl enterparam params' venv'
-      in 
-        (transExp(venv'', tenv) body; 
-        {venv=venv',tenv=tenv})
-      end
+and transDec(venv, tenv, decs) = 
+  let 
+    fun trdec(venv, tenv, A.VarDec({name, escape, typ, init, pos})) =
+      case typ of 
+        SOME(sym, pos) => 
+          (case S.look(tenv, sym) of
+            SOME ty => (checkTypesAssignable(actualTy ty, #ty (transExp(venv, tenv, init)), pos, "error : mismatched types in vardec");
+                        {venv=S.enter(venv, name, (Env.VarEntry{ty=actualTy ty})), tenv=tenv})
+          | NONE => (Err.error pos ("error: type " ^ S.name sym ^ " not recognized or declared"); {venv=venv, tenv=tenv})
+          )
+      | NONE => 
+        let
+          val {exp, ty} = transExp(venv, tenv, init)
+        in
+          (* TODO: Check if error should not do an add to venv *)
+          if isSameType(tenv, ty, T.NIL, pos)
+          then (Err.error pos "error: type cannot be nil unless in record type")
+          else ();
+          {venv = S.enter(venv, name, (Env.VarEntry{ty=ty})), tenv=tenv}
+        end
+    (* | trdec(venv, tenv, A.TypeDec(tydeclist)) =
+    | trdec(venv, tenv, A.FunctionDec(fundeclist)) = *)
+    and updateenvs(dec, {venv, tenv}) = trdec(venv, tenv, dec)  (* used as function to update environments with declaractions *)
+  in 
+    foldl updateenvs {venv=venv, tenv=tenv} decs
+  end
 
 and transTy(tenv, ty) =
   let 
