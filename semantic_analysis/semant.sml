@@ -152,7 +152,7 @@ fun transExp(venv, tenv, exp) =
             if isSameType(tenv, #ty (trexp(init)), getTyFromSymbol(tenv, typ, pos), pos)
             then ()
             else Err.error pos "error: array type and initializing exp differ";
-            {exp=(), ty=T.ARRAY(#ty (trexp(init)), unique)}
+            {exp=(), ty=actualTy(tenv, getTyFromSymbol(tenv, typ, pos))}
             )
       and trvar(A.SimpleVar(sym, pos)) =
         (case S.look(venv, sym) of
@@ -189,23 +189,26 @@ fun transExp(venv, tenv, exp) =
 
 and transDec(venv, tenv, []) = {venv = venv, tenv = tenv}
   | transDec(venv, tenv, A.VarDec{name, typ=NONE, init, ...}) = 
-      let val {exp, ty} = transExp(venv, tenv, init)
-      in {tenv=tenv, 
-          venv=S.enter(venv, name, E.VarEntry{ty=ty})}
+      let 
+        val {exp, ty} = transExp(venv, tenv, init)
+      in 
+        {tenv=tenv, venv=S.enter(venv, name, E.VarEntry{ty=ty})}
       end
-  | transDec(venv, tenv, A.TypeDec[{name,ty}]) = {venv=venv, tenv=S.enter(tenv, name, transTy(tenv,ty))}
-  | transDec(venv, tenv, A.FunctionDec[{name, params, body, pos, result=SOME(rt,pos)}]) =
+      (* TODO: make it so that it can handle more than just one dec *)
+  | transDec(venv, tenv, A.TypeDec[{name,ty,pos}]) = 
+      {venv=venv, tenv=S.enter(tenv, name, transTy(tenv,ty))}
+  | transDec(venv, tenv, A.FunctionDec[{name, params, body, pos, result=SOME(rt,pos1)}]) =
       let val SOME(result_ty) = S.look(tenv, rt)
           fun transparam{name, typ, pos} = 
             (case S.look(tenv, typ)
               of SOME t => {name=name, ty=t})
           val params' = map transparam params
-          val venv' = S.enter(venv, name, FunEntry{formals=map #ty params', result=result_ty})
+          val venv' = S.enter(venv, name, E.FunEntry{formals=map #ty params', result=result_ty})
           fun enterparam({name, ty}, venv) = S.enter(venv, name, E.VarEntry{ty=ty})
-          val venv''= fold enterparam params' venv'
+          val venv''= foldl enterparam params' venv'
       in 
-      transExp(venv'', tenv) body; 
-      {venv=venv',tenv=tenv} 
+        (transExp(venv'', tenv) body; 
+        {venv=venv',tenv=tenv})
       end
 
 and transTy(tenv, ty) =
