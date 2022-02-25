@@ -24,14 +24,14 @@ fun actualTy(tenv, ty) =
         T.NAME(name, tyref) => actualTy(tenv, getType(S.look(tenv, name)))
         | someTy => someTy
 
-fun typeExtractor(tenv, T.NAME(sym, uniqueOpt), pos) = 
-        let 
-          fun extractorHelper(SOME(typ)) = typeExtractor(tenv, typ, pos)
-            | extractorHelper(NONE) = (Err.error pos "error: symbol not defined"; T.BOTTOM) 
-        in
-          extractorHelper(!uniqueOpt)
-        end
-    | typeExtractor(tenv, typ, pos) = typ
+fun typeExtractor(tenv, typ : T.ty, pos) = typ
+    | typeExtractor(tenv, T.NAME(sym, uniqueOpt), pos) = 
+      let 
+        fun extractorHelper(SOME(typ)) = typeExtractor(tenv, typ, pos)
+          | extractorHelper(NONE) = (Err.error pos "error: symbol not defined"; T.BOTTOM) 
+      in
+        extractorHelper(!uniqueOpt)
+      end
 
 fun getTyFromSymbol(tenv, sym, pos) = 
       case S.look(tenv, sym) of 
@@ -224,15 +224,10 @@ and transDec(venv, tenv, decs) =
     fun trdec(venv, tenv, A.VarDec({name, escape, typ, init, pos})) =
       case typ of 
         SOME(sym, pos) => 
-          (case (S.look(tenv, sym)) of 
-            SOME(t : T.ty) => 
-              (checkTypesAssignable(actualTy(tenv, t), #ty (transExp(venv, tenv, init)), pos, "error : mismatched types in vardec");
-              {venv=S.enter(venv, name, (Env.VarEntry{ty=actualTy(tenv, t)})), tenv=tenv}
-              )
-            | NONE => 
-              (Err.error pos ("error: type " ^ S.name sym ^ " not recognized or declared"); 
-              {venv=venv, tenv=tenv}
-              )
+          (case S.look(tenv, sym) of
+            SOME ty => (checkTypesAssignable(actualTy ty, #ty (transExp(venv, tenv, init)), pos, "error : mismatched types in vardec");
+                        {venv=S.enter(venv, name, (Env.VarEntry{ty=actualTy ty})), tenv=tenv})
+          | NONE => (Err.error pos ("error: type " ^ S.name sym ^ " not recognized or declared"); {venv=venv, tenv=tenv})
           )
       | NONE => 
         let
@@ -244,8 +239,8 @@ and transDec(venv, tenv, decs) =
           else ();
           {venv = S.enter(venv, name, (Env.VarEntry{ty=ty})), tenv=tenv}
         end
-    (* | trdec(venv, tenv, A.TypeDec(tydeclist)) =
-    | trdec(venv, tenv, A.FunctionDec(fundeclist)) = *)
+    (* | trdec(venv, tenv, A.TypeDec(tydeclist)) = *)
+    (* | trdec(venv, tenv, A.FunctionDec(fundeclist)) = *)
     and updateenvs(dec, {venv, tenv}) = trdec(venv, tenv, dec)  (* used as function to update environments with declaractions *)
   in 
     foldl updateenvs {venv=venv, tenv=tenv} decs
