@@ -24,14 +24,14 @@ fun actualTy(tenv, ty) =
         T.NAME(name, tyref) => actualTy(tenv, getType(S.look(tenv, name)))
         | someTy => someTy
 
-fun typeExtractor(tenv, typ : T.ty, pos) = typ
-    | typeExtractor(tenv, T.NAME(sym, uniqueOpt), pos) = 
+fun typeExtractor(tenv, T.NAME(sym, uniqueOpt), pos) = 
       let 
         fun extractorHelper(SOME(typ)) = typeExtractor(tenv, typ, pos)
           | extractorHelper(NONE) = (Err.error pos "error: symbol not defined"; T.BOTTOM) 
       in
         extractorHelper(!uniqueOpt)
       end
+ | typeExtractor(tenv, typ : T.ty, pos) = typ
 
 fun getTyFromSymbol(tenv, sym, pos) = 
       case S.look(tenv, sym) of 
@@ -96,7 +96,7 @@ fun transExp(venv, tenv, exp) =
         (* LetExp *)
         | trexp(A.LetExp{decs, body, pos}) = 
             let 
-              val {venv', tenv'} = transDec(venv, tenv, decs)
+              val {venv = venv', tenv = tenv'} = transDec(venv, tenv, decs)
             in
               transExp(venv', tenv', body)
             end
@@ -202,8 +202,10 @@ and transDec(venv, tenv, decs) =
                     case typ of
                         SOME(symbol, pos) =>
                             (case S.look(tenv, symbol) of
-                                SOME ty => (checkTyEq(actualTy ty, #ty (transExp(venv, tenv, init)), pos);
-                                           {venv=S.enter(venv, name, (Env.VarEntry{ty=actualTy ty, read_only=false})), tenv=tenv})
+                                SOME ty => (checkTyEq({exp=(), ty = actualTy
+                                ty}, {exp = (), ty = #ty
+                                (transExp(venv, tenv, init))}, pos);
+                                           {venv=S.enter(venv, name, (Env.VarEntry{ty=actualTy ty})), tenv=tenv})
                               | NONE => (Err.error pos "type not recognized"; {venv=venv, tenv=tenv})
                             )
                       | NONE =>
@@ -213,7 +215,7 @@ and transDec(venv, tenv, decs) =
                               if isSameType(tenv, ty, T.NIL, pos)
                               then Err.error pos "error: initializing nil expressions not constrained by record type"
                               else ();
-                              {venv=S.enter(venv, name, (Env.VarEntry{ty=ty, read_only=false})), tenv=tenv}
+                              {venv=S.enter(venv, name, (Env.VarEntry{ty=ty})), tenv=tenv}
                             end
                     )
                 end
@@ -247,7 +249,7 @@ and transDec(venv, tenv, decs) =
                   foldl checkDuplicates [] tydeclist;
                   foldl checkIllegalCycle () tydeclist;
                   new_env
-                end
+                end (*
           | trdec(venv, tenv, A.FunctionDec(fundeclist)) =
                 let 
                     fun transrt rt =
@@ -273,7 +275,7 @@ and transDec(venv, tenv, decs) =
                                   | NONE => T.UNIT
                                 )
                             val params' = map transparam params
-                            fun enterparam ({name, ty}, venv) = S.enter(venv, name, Env.VarEntry{ty=ty, read_only=false})
+                            fun enterparam ({name, ty}, venv) = S.enter(venv, name, Env.VarEntry{ty=ty})
                             val venv'' = foldl enterparam venv' params'
                             val body' = transExp (venv'', tenv, body)
                         in
@@ -291,10 +293,12 @@ and transDec(venv, tenv, decs) =
                     foldr foldfundec () fundeclist;
                     {venv=venv', tenv=tenv}
                 end
+                *)
             and folddec(dec, {venv, tenv}) = trdec(venv, tenv, dec)
         in
             foldl folddec {venv=venv, tenv=tenv} decs
         end
+        
 and transTy(tenv, ty) =
   let 
     fun trty(tenv, A.NameTy (name, _)) = 
