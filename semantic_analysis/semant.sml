@@ -96,7 +96,7 @@ fun transExp(venv, tenv, exp) =
         (* LetExp *)
         | trexp(A.LetExp{decs, body, pos}) = 
             let 
-              val {venv', tenv'} = transDec(venv, tenv, decs)
+              val {venv = venv', tenv = tenv'} = transDec(venv, tenv, decs)
             in
               transExp(venv', tenv', body)
             end
