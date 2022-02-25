@@ -260,7 +260,7 @@ and transDec(venv, tenv, decs) =
                     SOME(T.NAME(sym,_)) => if List.exists (fn elem => String.compare(S.name sym, S.name elem) = EQUAL) seen
                                             then Err.error pos "error: cycle exists in type declarations"
                                             else cycleHelper(curr::seen, sym)
-                  | _ => Err.error pos "error: this should never happen"
+                  | _ => () 
               )
           in
             cycleHelper([], name)

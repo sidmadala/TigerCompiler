@@ -15,6 +15,16 @@ Semantic analyzer is built via chapter 5 of Appel book.
 
 Our group wrote main.sml, env.sml, and semant.sml.
 
+**Extra Credit**
+
+We implemented RECORDS in a purely functional manner and also added a BOTTOM type
+
+**Late Days** 
+
+We used a late day for this part of the compiler due to its difficulty
+
+
+
 TODO:
 1. go through all of absyn.sml and write code to translate it (that's where the list below comes from)
 2. go change escape = ref false in parser? (i guess deal with escapes)
