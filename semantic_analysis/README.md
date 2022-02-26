@@ -37,12 +37,12 @@ exps:
 - [x] breakexp
 - [x] letexp
 - [x] arrayexp
-- [ ] recordexp
+- [x] recordexp
 
 decs:
-- [ ] fundec
-- [ ] vardec
-- [ ] typedec
+- [x] fundec
+- [x] vardec
+- [x] typedec
 
 types:
 - [x] namety
