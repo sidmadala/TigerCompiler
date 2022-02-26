@@ -18,7 +18,6 @@ fun decLoopLevel() = loopLevel := !loopLevel - 1
 
 fun isSubType(T.BOTTOM, _) = true
   | isSubType(T.UNIT, T.UNIT) = true
-  | isSubType(T.NIL, T.NIL) = true
   | isSubType(T.NIL, T.RECORD(_)) = true
   | isSubType(T.INT, T.INT) = true
   | isSubType(T.STRING, T.STRING) = true
@@ -36,7 +35,8 @@ fun tyToString(T.NIL) = "NIL"
   | tyToString(T.INT) = "INT"
   | tyToString(T.STRING) = "STRING"
 
-fun checkTyOrder(T.RECORD(_), T.NIL, "eq", pos, errorMsg) = () 
+fun checkTyOrder(T.NIL, T.NIL, "eq", pos, errorMsg) = Err.error pos "nil cannot compare with nil"
+  | checkTyOrder(T.RECORD(_), T.NIL, "eq", pos, errorMsg) = () 
   | checkTyOrder(t1, t2, "sub", pos, errorMsg) = if isSubType(t1, t2) then () else Err.error pos errorMsg
   | checkTyOrder(t1, t2, "super", pos, errorMsg) = checkTyOrder(t2, t1, "sub", pos ,errorMsg)
   | checkTyOrder(t1, t2, "eq", pos, errorMsg) = if isSubType(t1, t2) andalso isSubType(t2, t1) then () else Err.error pos errorMsg
