@@ -4,14 +4,8 @@
  * Description: ML-Lex configuration file for Tiger
  *)
 
-(* type pos = int *)
-(* type lexresult = Tokens.token *)
-
-(* Added from parser chapter *)
-type svalue = Tokens.svalue
 type pos = int
-type ('a, 'b) token = ('a, 'b) Tokens.token
-type lexresult = (svalue, pos) token
+type lexresult = Tokens.token
 
 (*  Count line numbers *)
 val lineNum = ErrorMsg.lineNum
@@ -43,10 +37,8 @@ fun eof() =
           | (false, _) => (resetValues(); ErrorMsg.error (pos) "UnCloSed StRinG"; Tokens.EOF(pos, pos)) (* TODO: Add position matching *)
     end
 
-
 %%
 
-%header (functor TigerLexFun(structure Tokens: Tiger_TOKENS));
 ctrlChar=\\\^[@-_ ?];
 fmtChar=[ \t\^L\r];
 digit=[0-9]+;
@@ -77,6 +69,7 @@ id=[a-zA-Z][a-zA-Z0-9_]*;
 <INITIAL> {fmtChar} => (continue());
 <INITIAL> "while" => (Tokens.WHILE(yypos, yypos+5));
 <INITIAL> "for" => (Tokens.FOR(yypos, yypos+3));
+<INITIAL> "array" => (Tokens.ARRAY(yypos, yypos+5));
 <INITIAL> "to" => (Tokens.TO(yypos, yypos+2));
 <INITIAL> "break" => (Tokens.BREAK(yypos, yypos+5));
 <INITIAL> "in" => (Tokens.IN(yypos, yypos+2));
@@ -91,7 +84,6 @@ id=[a-zA-Z][a-zA-Z0-9_]*;
 <INITIAL> "of" => (Tokens.OF(yypos, yypos+2));
 <INITIAL> "nil" => (Tokens.NIL(yypos, yypos+3));
 <INITIAL> "let" => (Tokens.LET(yypos, yypos+3));
-<INITIAL> "array" => (Tokens.ARRAY(yypos, yypos+5));
 
 <INITIAL> "," => (Tokens.COMMA(yypos, yypos+1));
 <INITIAL> ":" => (Tokens.COLON(yypos, yypos+1));
