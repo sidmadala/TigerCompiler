@@ -2,7 +2,6 @@ structure Err = ErrorMsg
 structure A = Absyn
 structure E = Env
 structure S = Symbol
-structure T = Types
 
 structure Semant =
 struct
@@ -18,23 +17,35 @@ fun incLoopLevel() = loopLevel := !loopLevel + 1
 fun decLoopLevel() = loopLevel := !loopLevel - 1
 
 fun isSubType(T.BOTTOM, _) = true
-  | isSubType(_, UNIT) = true
-  | isSubType(NIL, RECORD(_)) = true
-  | isSubType(INT, INT) = true
-  | isSubType(STRING, STRING) = true
+  | isSubType(T.UNIT, T.UNIT) = true
+  | isSubType(T.NIL, T.NIL) = true
+  | isSubType(T.NIL, T.RECORD(_)) = true
+  | isSubType(T.INT, T.INT) = true
+  | isSubType(T.STRING, T.STRING) = true
   | isSubType(T.RECORD(_, u1), T.RECORD(_, u2)) = u1 = u2
   | isSubType(T.ARRAY(_, u1), T.ARRAY(_, u2)) = u1 = u2
   | isSubType(T.NAME(s1, _), T.NAME(s2, _)) = String.compare(S.name s1, S.name s2) = EQUAL 
   | isSubType(_, _) = false
 
+fun tyToString(T.NIL) = "NIL"
+  | tyToString(T.NAME(_)) = "NAME"
+  | tyToString(T.RECORD(_)) = "RECORD"
+  | tyToString(T.ARRAY(_)) = "ARRAY"
+  | tyToString(T.UNIT) = "UNIT"
+  | tyToString(T.BOTTOM) = "BOTTOM"
+  | tyToString(T.INT) = "INT"
+  | tyToString(T.STRING) = "STRING"
 
-fun checkTyOrder(t1, t2, "sub", pos, errorMsg) = if isSubType(t1, t2) then () else Err.error pos errorMsg
+fun checkTyOrder(T.RECORD(_), T.NIL, "eq", pos, errorMsg) = () 
+  | checkTyOrder(t1, t2, "sub", pos, errorMsg) = if isSubType(t1, t2) then () else Err.error pos errorMsg
   | checkTyOrder(t1, t2, "super", pos, errorMsg) = checkTyOrder(t2, t1, "sub", pos ,errorMsg)
   | checkTyOrder(t1, t2, "eq", pos, errorMsg) = if isSubType(t1, t2) andalso isSubType(t2, t1) then () else Err.error pos errorMsg
   | checkTyOrder(t1, t2, "assign", pos, errorMsg) = checkTyOrder(t1, t2, "super", pos, errorMsg)
   | checkTyOrder(T.INT, T.INT, "comp", pos, errorMsg) = ()
   | checkTyOrder(T.STRING, T.STRING, "comp", pos, errorMsg) = ()
   | checkTyOrder(T.INT, T.INT, "arith", pos, errorMsg) = ()
+  | checkTyOrder(t1, t2, "neq", pos, errorMsg) = if isSubType(t1, t2) = false
+  orelse isSubType(t2, t1) = false then () else Err.error pos errorMsg
   | checkTyOrder(_, _, _, pos, errorMsg) = Err.error pos errorMsg
 
 
@@ -47,55 +58,12 @@ fun actualTy(tenv, ty) =
         T.NAME(name, tyref) => actualTy(tenv, getType(S.look(tenv, name)))
         | someTy => someTy
 
-fun typeExtractor(tenv, T.NAME(sym, uniqueOpt), pos) = 
-      let 
-        fun extractorHelper(SOME(typ)) = typeExtractor(tenv, typ, pos)
-          | extractorHelper(NONE) = (Err.error pos "error: symbol not defined"; T.BOTTOM) 
-      in
-        extractorHelper(!uniqueOpt)
-      end
- | typeExtractor(tenv, typ : T.ty, pos) = typ
-
-fun getTyFromSymbol(tenv, sym, pos) = 
-      case S.look(tenv, sym) of 
-        SOME(typ) => typeExtractor(tenv, typ, pos)
-        | NONE => (ErrorMsg.error pos ("type not yet defined"); T.INT)
-(*
-fun checkInt({exp=_, ty=T.INT}, pos) = ()
-    | checkInt ({exp=_, ty=_ }, pos) = Err.error pos "error: not an integer"
-
-fun checkTyComp({exp=_, ty = T.INT}, {exp=_, ty = T.INT}, pos) = ()
-  | checkTyComp({exp=_, ty = T.STRING}, {exp=_, ty = T.STRING}, pos) = ()
-  | checkTyComp(_, _, pos) = Err.error pos "error: not comparable"
-
-fun checkTyEq({exp=_, ty = T.INT}, {exp, ty = T.INT}, pos) = ()
-  | checkTyEq({exp=_, ty = T.STRING}, {exp, ty = T.STRING}, pos) = ()
-  | checkTyEq({exp=_, ty = T.UNIT}, {exp, ty = T.UNIT}, pos) = ()
-  | checkTyEq({exp=_, ty = T.RECORD(_)}, {exp, ty = T.NIL}, pos) = ()
-  | checkTyEq({exp=_, ty = T.NIL}, {exp, ty = T.RECORD(_)}, pos) = ()
-  | checkTyEq({exp=_, ty = T.RECORD(_, u1)}, {exp, ty = T.RECORD(_, u2)}, pos) =
-    if u1 = u2 then () else Err.error pos "error: record types mismatch"
-  | checkTyEq({exp=_, ty = T.ARRAY(_, u1)}, {exp, ty = T.ARRAY(_, u2)}, pos) =
-    if u1 = u2 then () else Err.error pos "error: array types mismatch"
-  | checkTyEq(_, _, pos) = Err.error pos "error: types not equal"
-
-fun isSameType(tenv, T.UNIT, T.UNIT, pos : Absyn.pos) = true
-  | isSameType(tenv, T.INT, T.INT, pos) = true
-  | isSameType(tenv, T.STRING, T.STRING, pos) = true
-  | isSameType(tenv, T.RECORD(_, u1), T.RECORD(_, u2), pos) = (u1 = u2)
-  | isSameType(tenv, T.RECORD(_), T.UNIT, pos) = true
-  | isSameType(tenv, T.UNIT, T.RECORD(_), pos) = true
-  | isSameType(tenv, T.ARRAY(_, u1), T.ARRAY(_, u2), pos) = (u1 = u2)
-  | isSameType(tenv, T.NAME(s1, _), T.NAME(s2, _), pos) = String.compare(S.name
-  s1, S.name s2) = EQUAL
-  | isSameType(tenv, ty1, ty2, pos) = false
-*)
 (* beginning of main transExp function *)
 fun transExp(venv, tenv, exp) =
     let
-      fun trexp(A.NilExp) = {exp = (), ty = Types.NIL}
-        | trexp(A.IntExp(i)) = {exp = (), ty = Types.INT}
-        | trexp(A.StringExp(s, pos)) = {exp = (), ty = Types.STRING}
+      fun trexp(A.NilExp) = {exp = (), ty = T.NIL}
+        | trexp(A.IntExp(i)) = {exp = (), ty = T.INT}
+        | trexp(A.StringExp(s, pos)) = {exp = (), ty = T.STRING}
         | trexp(A.VarExp(var)) = trvar(var)
 
         (* SeqExp 🐶*)  
@@ -128,7 +96,7 @@ fun transExp(venv, tenv, exp) =
 
         (* BreakExp 🐶*) 
         | trexp(A.BreakExp(pos)) = (
-          if not isInLoop() then Err.error pos "illegal break" else (); 
+          if isInLoop() then () else Err.error pos "illegal break"; 
           {exp = (), ty = T.UNIT}
           ) 
 
@@ -166,7 +134,7 @@ fun transExp(venv, tenv, exp) =
 
         (* AssignExp: TODO: implement for loop var unassignable*)  
         | trexp(A.AssignExp{var, exp, pos}) = (
-          checkTyOrder(#ty (trvar(var)), #ty (trexp(exp)), "assign", pos, "error: var and exp types don't match");
+          checkTyOrder(actualTy(tenv, #ty (trvar(var))), #ty (trexp(exp)), "assign", pos, "error: var and exp types don't match");
           {exp = () , ty = T.UNIT} 
           )
 
@@ -176,7 +144,8 @@ fun transExp(venv, tenv, exp) =
         2. check if argument typing works out  *)
           (let 
           (* TODO: "eq" or "super" *)
-          fun checkFunParams(f::formals, a::args, pos) = checkTyOrder(f, #ty (trexp a), "super", pos, "error: argument mismatch")
+          fun checkFunParams(f::formals, a::args, pos) = (checkTyOrder(f, #ty
+            (trexp a), "super", pos, "error: argument mismatch"); checkFunParams(formals, args, pos))
             | checkFunParams([], a::args, pos) = (Err.error pos "error: too many arguments given"; ())
             | checkFunParams(f::formals, [], pos) = (Err.error pos "error: not enough arguments given"; ())
             | checkFunParams([], [], pos) = ()
@@ -191,11 +160,11 @@ fun transExp(venv, tenv, exp) =
         (* ArrayExp  TODO: super? *)
         | trexp(A.ArrayExp({typ, size, init, pos})) =
           (case S.look(tenv, typ) of
-              SOME x =>
-                (case actualTy x of
+              SOME(x) =>
+                (case actualTy(tenv, x) of
                   T.ARRAY(ty, unique) => (
                     checkTyOrder(#ty (trexp size), T.INT, "eq", pos, "not an integer");
-                    checkTyOrder(actualTy ty, #ty (trexp init), "super", pos, "error: array type and initializing exp differ");
+                    checkTyOrder(actualTy(tenv, ty), #ty (trexp init), "super", pos, "error: array type and initializing exp differ");
                     {exp=(), ty=T.ARRAY(ty, unique)}
                   )
                   | _ => (Err.error pos "type not an array"; {exp=(), ty=T.BOTTOM})
@@ -207,20 +176,23 @@ fun transExp(venv, tenv, exp) =
         | trexp(A.RecordExp({fields, typ, pos})) = 
             (case S.look(tenv, typ) of
                   SOME x => 
-                      (case actualTy x of
+                      (case actualTy(tenv,x) of
                           T.RECORD(f, _) => 
                                 let 
-                                    fun check(({fieldSym, fieldExp, pos}, {recFormalSym, recFormalTy}), ()) = 
-                                      (
-                                        if String.compare(S.name fieldSym, S.name recFormalSym) <> EQUAL
-                                        then Err.error pos ("field name doesn't match")
-                                        else ();
-                                        checkTyOrder(recFormalTy, #ty (trexp fieldExp), "super", pos, "field type doesn't match");
-                                      )
+                                    fun check(((symbol, exp, pos), (name, ty)), ()) = 
+                                        if String.compare(S.name symbol, S.name name) <> EQUAL
+                                        then Err.error pos ("field name doesn't match Given:" ^ S.name symbol ^ "Requred:" ^ S.name name)
+                                        else checkTyOrder(actualTy(tenv, ty),
+                                        actualTy(tenv, #ty (trexp exp)),
+                                        "super", pos, 
+                                        "field type doesn't match Required:" ^ (tyToString(actualTy(tenv, ty)) ^ "Given:" ^
+                                        (tyToString(actualTy(tenv, #ty (trexp
+                                        exp))))))
                                 in
-                                    if List.length(recFormal) <> List.length(fields)
+                                    if List.length(f()) <> List.length(fields)
                                     then (Err.error pos ("record list is wrong length: " ^ S.name typ); {exp=(), ty= T.NIL})
-                                    else (foldr check () ListPair.zip(fields, f()); {exp=(), ty= actualTy x})
+                                    else (foldl check () (ListPair.zip(fields,
+                                    f())); {exp=(), ty= actualTy(tenv, x)})
                                 end
                           | _ => (Err.error pos ("error : expected record type, not: " ^ S.name typ); {exp=(), ty=T.NIL})
                         )
@@ -232,32 +204,30 @@ fun transExp(venv, tenv, exp) =
         (case S.look(venv, sym) of
               SOME(Env.VarEntry({ty})) => {exp=(), ty= ty} 
             | SOME(Env.FunEntry({formals, result})) => {exp=(), ty= result} 
-            | NONE => (Err.error pos ("error: variable not declared" ^ S.name sym); {exp=(), ty= T.BOTTOM})
+            | NONE => (Err.error pos ("error: variable not declared " ^ S.name sym); {exp=(), ty= T.BOTTOM})
         )
           (* FieldVar *)
         | trvar(A.FieldVar(var, sym, pos)) = 
-            (case trvar var of 
-                {exp=(), ty=T.RECORD(fieldTys, unique)} =>
+            (case actualTy(tenv, #ty(trvar var)) of 
+                T.RECORD(fieldTys, unique) =>
                     let
                       val fields = fieldTys()
                       fun getFieldType((fieldSym, fieldTy)::l, id : Absyn.symbol, pos : Absyn.pos) =
                             if String.compare(S.name fieldSym, S.name sym) = EQUAL 
-                            then 
-                              case S.look(tenv, fieldSym) of
-                                SOME(ty) => ty
-                                |NONE => (Err.error pos ("error: type does not exist in fields"); T.BOTTOM)
+                            then actualTy(tenv, fieldTy) 
                             else getFieldType(l, id, pos)
                         | getFieldType([], id, pos) = (Err.error pos ("error: field does not exist in record"); T.BOTTOM)
                     in
                       {exp=(), ty=getFieldType(fields, sym, pos)}
                     end
-                | {exp=_, ty=_} => (Err.error pos ("error: not a record"); {exp=(), ty=T.BOTTOM})
+                | _ => (Err.error pos ("error: not a record"); {exp=(), ty=T.BOTTOM})
             )
             (* SubscriptVar *)
         | trvar(A.SubscriptVar(var, exp, pos)) =
-              (case trvar var of
-                {exp=(), ty=T.ARRAY(arrTy, unique)} => (checkInt(trexp exp, pos); {exp=(), ty=actualTy(tenv, arrTy)})
-                | {exp=_, ty=_} => (Err.error pos ("error: not an array"); {exp=(), ty=T.BOTTOM})  
+              (case actualTy(tenv, #ty (trvar var)) of
+                T.ARRAY(arrTy, unique) => (checkTyOrder(#ty (trexp
+                exp), T.INT, "eq", pos, "not an integer"); {exp=(), ty=actualTy(tenv, arrTy)})
+                | _ => (Err.error pos ("error: not an array"); {exp=(), ty=T.BOTTOM})  
               )    
     in
       trexp(exp)
@@ -267,8 +237,10 @@ and transDec(venv, tenv, decs) =
         let 
           (* VarDec 🐶 *)
           fun trdec(venv, tenv, A.VarDec({name, escape, typ, init, pos})) =
-              (
+              
+                let
                 val initTy = #ty (transExp(venv, tenv, init));
+                in
                 case typ of
                     SOME(symbol, pos) =>
                         (case S.look(tenv, symbol) of
@@ -277,10 +249,12 @@ and transDec(venv, tenv, decs) =
                           | NONE => (Err.error pos "type not recognized"; {venv = venv, tenv = tenv})
                         )
                   | NONE =>
-                        (checkTyOrder(initTy, T.NIL, "eq", pos, "error: initializing nil expressions not constrained by record type");
-                        {venv=S.enter(venv, name, (Env.VarEntry{ty = initTy})), tenv = tenv}
-                        )        
-                )
+                        (if String.compare(tyToString(initTy), "NIL") = EQUAL then Err.error pos "error: initializing nil expressions not constrained by record type" else ();
+                        {venv=S.enter(venv, name, (Env.VarEntry{ty = initTy})),
+                        tenv = tenv})
+                        
+                end
+                
           (* TypeDec  TODO: should we break the cycle here or add extra stuff in actualTy to avoid inifite loop?*)
           | trdec(venv, tenv, A.TypeDec(tydeclist)) =
               let
@@ -303,22 +277,24 @@ and transDec(venv, tenv, decs) =
                 foldl (fn({name, ty, pos}, l) => if List.exists (fn s => String.compare(s, S.name name) = EQUAL) l then (Err.error pos "error : two types of same name in mutually recursive tydec"; l) else (S.name name :: l))  [] tydeclist;
                 foldl checkIllegalCycle () tydeclist;
                 {tenv = tenvActualTy, venv = venv}
-              )
-             (* FunctionDec  TODO: use actualTy?? *)
+              end
+             (* FunctionDec  TODO: 1. use actualTy?? 2. should return type use
+             * sub or eq *)
           | trdec(venv, tenv, A.FunctionDec(fundeclist)) =
                 let 
-                    fun transrt rt =
+                    fun transrt (rt, pos) =
                         (case S.look(tenv, rt) of 
                             SOME(ty) => actualTy(tenv, ty)
-                          | NONE => (Err.error 0 ("Return type unrecognized: " ^ S.name rt); T.BOTTOM)
+                          | NONE => (Err.error pos ("Return type unrecognized: " ^ S.name rt); T.BOTTOM)
                         )
                     fun transparam {name, escape, typ, pos} = 
                         (case S.look(tenv, typ) of
                             SOME ty => {name = name, ty = actualTy(tenv, ty)}
-                          | NONE => (Err.error 0 ("Parameter type unrecognized: " ^ S.name typ); T.BOTTOM)
+                          | NONE => (Err.error pos ("Parameter type unrecognized:" ^ S.name typ); {name = name, ty = T.BOTTOM})
                         )
                     fun enterFuncs ({name, params, body, pos, result=SOME(rt, pos')}, venv) = 
-                            S.enter(venv, name, Env.FunEntry{formals= map #ty (map transparam params), result=transrt rt})
+                            S.enter(venv, name, Env.FunEntry{formals= map #ty
+                            (map transparam params), result=transrt(rt,pos)})
                       | enterFuncs ({name, params, body, pos, result=NONE}, venv) = 
                             S.enter(venv, name, Env.FunEntry{formals= map #ty (map transparam params), result=T.UNIT})
                     val venv' = foldl enterFuncs venv fundeclist
@@ -326,7 +302,7 @@ and transDec(venv, tenv, decs) =
                         let 
                             val resultTy = 
                                 (case result of
-                                    SOME(rt, pos') => transrt rt
+                                    SOME(rt, pos') => transrt(rt,pos')
                                   | NONE => T.UNIT
                                 )
                             val venv'' = foldl (fn({name, ty}, ans) => S.enter(ans, name, Env.VarEntry{ty=ty})) venv' (map transparam params)
@@ -375,8 +351,9 @@ and transTy(tenv, ty) =
               SOME(ty) => (name, ty)
             | NONE => (Err.error pos ("error: undefined type in record field: " ^ S.name typ); (name, T.NIL))  
             (* TODO: fix one of these things idk what's wrong @MICHELLE *)
-            fun recGen() = foldl (fn (a, b) => trfields(a)::b) [] fields
-        in 
+            fun recGen() = foldl (fn (a, b) => b @ [trfields(a)]) [] fields
+        in
+            recGen(); (* check TYPE!!!! MUST KEEP!! *)
             T.RECORD (recGen, ref ())
         end
       (* ArrayTy 🐶*)
