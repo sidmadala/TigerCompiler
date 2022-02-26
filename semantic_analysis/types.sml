@@ -3,7 +3,7 @@ struct
   type unique = unit ref
 
   datatype ty = 
-            RECORD of (unit -> (Symbol.symbol * ty) list) * unique
+            RECORD of (ty Symbol.table -> (Symbol.symbol * ty) list) * unique
           | NIL
           | INT
           | STRING

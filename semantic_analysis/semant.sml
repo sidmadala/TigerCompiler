@@ -189,10 +189,10 @@ fun transExp(venv, tenv, exp) =
                                         (tyToString(actualTy(tenv, #ty (trexp
                                         exp))))))
                                 in
-                                    if List.length(f()) <> List.length(fields)
+                                    if List.length(f(tenv)) <> List.length(fields)
                                     then (Err.error pos ("record list is wrong length: " ^ S.name typ); {exp=(), ty= T.NIL})
                                     else (foldl check () (ListPair.zip(fields,
-                                    f())); {exp=(), ty= actualTy(tenv, x)})
+                                    f(tenv))); {exp=(), ty= actualTy(tenv, x)})
                                 end
                           | _ => (Err.error pos ("error : expected record type, not: " ^ S.name typ); {exp=(), ty=T.NIL})
                         )
@@ -211,7 +211,7 @@ fun transExp(venv, tenv, exp) =
             (case actualTy(tenv, #ty(trvar var)) of 
                 T.RECORD(fieldTys, unique) =>
                     let
-                      val fields = fieldTys()
+                      val fields = fieldTys(tenv)
                       fun getFieldType((fieldSym, fieldTy)::l, id : Absyn.symbol, pos : Absyn.pos) =
                             if String.compare(S.name fieldSym, S.name sym) = EQUAL 
                             then actualTy(tenv, fieldTy) 
@@ -346,14 +346,14 @@ and transTy(tenv, ty) =
     (* RecordTy *)
     | trty(tenv, A.RecordTy(fields)) = 
         let 
-          fun trfields {name, escape, typ, pos} =
+          fun trfields (tenv, {name, escape, typ, pos}) =
             case S.look(tenv, typ) of
               SOME(ty) => (name, ty)
             | NONE => (Err.error pos ("error: undefined type in record field: " ^ S.name typ); (name, T.NIL))  
             (* TODO: fix one of these things idk what's wrong @MICHELLE *)
-            fun recGen() = foldl (fn (a, b) => b @ [trfields(a)]) [] fields
+            fun recGen(tenv) = foldl (fn (a, b) => b @ [trfields(tenv, a)]) [] fields
         in
-            recGen(); (* check TYPE!!!! MUST KEEP!! *)
+            recGen(tenv); (* check TYPE!!!! MUST KEEP!! *)
             T.RECORD (recGen, ref ())
         end
       (* ArrayTy 🐶*)
