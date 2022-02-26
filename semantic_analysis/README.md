@@ -17,7 +17,7 @@ Our group wrote main.sml, env.sml, and semant.sml.
 
 **Extra Credit**
 
-We implemented RECORDS in a purely functional manner and also added a BOTTOM type
+We implemented RECORDS in a purely functional manner and also added a BOTTOM type. We also changed records to take a symbol table instead of a unit since we were having trouble with our implementation in terms of extracting types. 
 
 **Late Days** 
 
@@ -32,8 +32,8 @@ TODO:
 
 vars:
 - [x] simple
-- [ ] field
-- [ ] subscript
+- [x] field
+- [x] subscript
 
 exps:
 - [x] varexp, nilexp, intexp, stringexp
@@ -46,13 +46,13 @@ exps:
 - [ ] forexp
 - [X] breakexp
 - [x] letexp
-- [ ] arrayexp
-- [ ] recordexp
+- [x] arrayexp
+- [x] recordexp
 
 decs:
+- [x] fundec
 - [x] vardec
 - [x] typedec
-- [ ] fundec
 
 types:
 - [x] namety
