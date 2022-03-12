@@ -4,8 +4,8 @@ structure Env :> ENV =
 struct
   type access = unit
   type ty = Types.ty
-  datatype enventry = VarEntry of {ty: ty}
-                    | FunEntry of {formals: ty list, result: ty}
+  datatype enventry = VarEntry of {access: Translate.access, ty: ty}
+                    | FunEntry of {level: Translate.level, label: Temp.label, formals: ty list, result: ty}
 
   val base_tenv = foldl (fn((s, t), ans) => Symbol.enter(ans, s, t)) Symbol.empty [(Symbol.symbol "int", Types.INT), (Symbol.symbol "string", Types.STRING)]
   
