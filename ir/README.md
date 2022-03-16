@@ -14,4 +14,5 @@ Frame Analysis:
 - [ ]  semant.sml
 
 IR:
-
+- [ ] translate.sml
+- [ ] semant.sml
