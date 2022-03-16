@@ -27,7 +27,7 @@ struct
                              else allocFormals(offset + wordSize, formalList, InFrame(offset)::allocList, numRegs)
                 )
         in
-            {name=name, formals=_, numLocals= ref 0, currentOffset= ref 0}
+            {name=name, formals=allocFormals(0, formals, [], 0), numLocals= ref 0, currentOffset= ref 0}
         end
 
     (* Allocates local variable and returns access level *)
