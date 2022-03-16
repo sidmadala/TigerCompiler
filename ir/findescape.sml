@@ -12,12 +12,13 @@ struct
                     SOME(d', escape) => if d > d' then escape := true else ()
                   | NONE => () 
                 )
+                (*@SID Q: should this trexp var below not be trvar var?*)
               | trvar(A.SubscriptVar(var, exp, pos)) = (trexp var; traverseExp(env, d, exp))
               | trvar(A.FieldVar(var, sym, pos)) = trvar(var)
         in
             trvar s
         end
-    and traverseExp(env:escEnv, drdepth, s:Absyn.exp): unit =
+    and traverseExp(env:escEnv, d:depth, s:Absyn.exp): unit =
         let 
             fun trexp(A.NilExp()) = ()
               | trexp(A.IntExp(num)) = ()
@@ -29,7 +30,7 @@ struct
               | trexp(A.RecordExp {fields, typ, pos}) = List.app (fn (sym, exp, pos) => trexp exp) fields
               | trexp(A.ArrayExp {typ, size, init, pos}) = (trexp size; trexp init)
               | trexp(A.IfExp {test, then', else', pos}) = (trexp test; trexp then'; case else' of SOME(exp') => trexp exp' | NONE => ())
-              | trexp(A.ForExp {var, escape, lo, hi, body, pos}) = () (* TODO: Implementation is confusing *)
+              | trexp(A.ForExp {var, escape, lo, hi, body, pos}) = (trexp lo; trexp hi; tranverseExp(S.enter(env, (var, escape)), d, body))
               | trexp(A.WhileExp {test, body, pos}) = (trexp test; trexp body) 
               | trexp(A.LetExp {decs, body, pos}) = traverseExp(traverseDecs(env, d, decs), d, body)
               | trexp(A.AssignExp {var, exp, pos}) = (traverseVar(env, d, var); trexp exp) 
@@ -39,7 +40,7 @@ struct
         end
     and traverseDecs(env:escEnv, d:depth, s: Absyn.dec list): escEnv = 
         let 
-            fun trdec(A.VarDec {name, escape, typ, init, pos}, env) = traverseExp(S.enter(env, name, (d, escape))) (* FIX: Should we traverse? *)
+            fun trdec(A.VarDec {name, escape, typ, init, pos}, env) = traverseExp(S.enter(env, name, (d, escape)), d, init) (* FIX: Should we traverse? - A: yes *)
               | trdec(A.TypeDec(tydeclist), env) = env
               | trdec(A.FunctionDec(fundeclist), env) = 
                 let
