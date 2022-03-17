@@ -12,8 +12,7 @@ struct
                     SOME(d', escape) => if d > d' then escape := true else ()
                   | NONE => () 
                 )
-                (*@SID Q: should this trexp var below not be trvar var?*)
-              | trvar(A.SubscriptVar(var, exp, pos)) = (trexp var; traverseExp(env, d, exp))
+              | trvar(A.SubscriptVar(var, exp, pos)) = (trvar var; traverseExp(env, d, exp))
               | trvar(A.FieldVar(var, sym, pos)) = trvar(var)
         in
             trvar s

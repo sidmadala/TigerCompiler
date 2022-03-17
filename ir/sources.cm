@@ -6,6 +6,7 @@ main.sml
 table.sig
 table.sml
 translate.sml
+translate.sig
 types.sml
 absyn.sml
 prabsyn.sml

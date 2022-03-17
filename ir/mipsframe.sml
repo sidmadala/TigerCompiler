@@ -16,14 +16,14 @@ struct
     fun name {name=name, formals=_, numLocals=_, currentOffset=_} = name
     fun formals {name=_, formals=formals, numLocals=_, currentOffset=_} = formals
 
-    fun newFrame (name, formals) = 
+    fun newFrame {name : Temp.label, formals : bool list} : frame = 
         let 
             fun allocFormals(offset, [], allocList, numRegs) = allocList
               | allocFormals(offset, currentFormal::formalList, allocList, numRegs) =
                 (case currentFormal of 
                     true => allocFormals(offset + wordSize, formalList, InFrame(offset)::allocList, numRegs) (* Escaping function args must be in a frame for static link *)
                   | false => if numRegs < argRegs (* Non-escaping function args can either be in a register or in a frame depending on how many arguments are currently in use *)
-                             then allocFormals(offset + wordSize, formalList, InReg(Temp.newTemp())::allocList, numRegs + 1)
+                             then allocFormals(offset + wordSize, formalList, InReg(Temp.newtemp())::allocList, numRegs + 1)
                              else allocFormals(offset + wordSize, formalList, InFrame(offset)::allocList, numRegs)
                 )
         in
@@ -41,7 +41,7 @@ struct
             incrementNumLocals frame';
             case escape of (* If variable escapes, then it is inFrame, else inReg *)
                 true => (incrementFrameOffset frame'; InFrame(getOffset frame'))
-              | false => (InReg(Temp.newTemp()))
+              | false => (InReg(Temp.newtemp()))
         end
 
 
