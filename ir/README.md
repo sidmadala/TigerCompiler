@@ -20,4 +20,34 @@ Frame Analysis:
 NOTE - I changed Tr.SEQ -> stm * stm to Tr.SEQ -> stm list 
 IR:
 - [ ] translate.sml
+
+    vars:
+    - [ ] simple
+    - [ ] field
+    - [ ] subscript
+
+    exps:
+    - [ ] varexp, nilexp, intexp, stringexp
+    - [ ] opexp
+    - [ ] callexp
+    - [ ] seqexp
+    - [ ] assignexp
+    - [ ] ifexp
+    - [ ] whileexp
+    - [ ] forexp
+    - [ ] breakexp
+    - [ ] letexp
+    - [ ] arrayexp
+    - [ ] recordexp
+
+    decs:
+    - [ ] fundec
+    - [ ] vardec
+    - [ ] typedec
+
+    types:
+    - [ ] namety
+    - [ ] recordty
+    - [ ] arrayty
+
 - [ ] semant.sml
