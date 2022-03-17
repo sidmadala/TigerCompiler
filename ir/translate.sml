@@ -53,7 +53,7 @@ struct
             end 
     
     fun unNx (Nx s) = s
-        | unNx (Ex e) = T.EXP e
+        | unNx (Ex e) = Tr.EXP e
         | unNx (Cx genstm) = 
             let 
                 val t = Temp.newlabel()
@@ -65,9 +65,9 @@ struct
             
     fun unCx (Cx genstm) = genstm
         | unCx (Ex e) = 
-            case e of 
-                Tr.CONST 0 => (fun (t, f) => Tr.JUMP(Tr.NAME(f, [f])))
-                | Tr.CONST 1 => (fun (t, f) => Tr.JUMP(Tr.NAME(t, [t])))
-                | exp => (Tr.CJUMP(Tr.EQ, CONST 1, exp, t, f))
+            (case e of 
+                Tr.CONST 0 => (fn (t, f) => Tr.JUMP(Tr.NAME(f), [f]))
+                | Tr.CONST 1 => (fn (t, f) => Tr.JUMP(Tr.NAME(t), [t]))
+                | exp => (fn (t, f) => Tr.CJUMP(Tr.EQ, Tr.CONST 1, exp, t, f)))
         | unCx (Nx s) = ErrorMsg.impossible "it should never occur in a well typed Tiger program >:("
 end
