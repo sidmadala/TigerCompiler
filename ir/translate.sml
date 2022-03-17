@@ -59,7 +59,7 @@ struct
                 val t = Temp.newlabel()
             in
                 genstm(t, t)
-                (*T.LABEL t ??? maybe???? 🤡🤫👀👨‍💻🤥*)
+                (*Tr.LABEL t ??? maybe???? 🤡🤫👀👨‍💻🤥*)
                 (*please someone look at this later thank u idfk*)
             end
             
@@ -70,4 +70,74 @@ struct
                 | Tr.CONST 1 => (fn (t, f) => Tr.JUMP(Tr.NAME(t), [t]))
                 | exp => (fn (t, f) => Tr.CJUMP(Tr.EQ, Tr.CONST 1, exp, t, f)))
         | unCx (Nx s) = ErrorMsg.impossible "it should never occur in a well typed Tiger program >:("
+    
+    (*IF-THEN-ELSE*)
+    fun transIF(test, thenBody, elseBody) = 
+        let
+            val genstm = unCx test
+            val thenBody' = unEx thenBody 
+            val elseBody' = unEx elseBody 
+            val thenStart = Temp.newlabel()
+            val elseStart = Temp.newlabel()
+            val end = Temp.newlabel()
+            val ans = Temp.newtemp()
+        in
+            Ex(Tr.ESEQ[
+                genstm(thenStart, elseStart),
+                Tr.LABEL thenStart, 
+                Tr.MOVE(Tr.TEMP ans, Tr.EXP(thenBody')),
+                Tr.JUMP(Tr.NAME end, [end]),
+                Tr.LABEL elseStart,
+                Tr.MOVE(Tr.TEMP ans, Tr.EXP(elseBody')),
+                Tr.LABEL end
+            ], Tr.TEMP ans)
+        end
+
+    (*FOR*)
+    fun transFOR(var, hi, lo, body, endLabel) = 
+        let
+          val var' = unEx var
+          val hi' = unEx hi
+          val lo' = unEx lo
+          val body' = unNx body
+        in
+        end
+        
+    (*WHILE*)
+    fun transWHILE(test, body, endLabel) = 
+        let 
+            val testLabel = Temp.newlabel()
+            val bodyLabel = Temp.newlabel()
+            val genstm = unCx test
+            val body' = unEx body
+        in
+            Nx(Tr.SEQ[
+                Tr.JUMP(Tr.NAME testLabel, [testLabel]),
+                Tr.LABEL bodyLabel, 
+                Ex(body'),
+                Tr.LABEL testLabel
+                genstm(bodyLabel, endLabel),
+                Tr.LABEL endLabel
+            ])
+        end
+    
+    (*BREAK*)
+    fun transBREAK(break) = Nx(Tr.JUMP(Tr.NAME break, [break]))
+
+    (*ASSIGN*)
+    fun transAssign(left, right) =
+        let 
+            val left' = unEx left 
+            val right' = unEx right
+        in
+            Nx(Tr.MOVE(left',right'))
+        end
+    
+    (*DATA STUCTURES*)
+    fun transNIL = Ex(Tr.CONST 0)
+    fun transINT(n) = Ex(Tr.CONST n)
+    (* fun transString() = ()
+    fun transRecord() = ()
+    fun transArray() = () *)
+
 end
