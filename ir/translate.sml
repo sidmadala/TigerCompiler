@@ -1,11 +1,12 @@
 structure F = MipsFrame
+structure Tr = Tree
 
 structure Translate : TRANSLATE = 
 (*manages local variables and static function nesting for semant + static link stuff*)
 struct
-    datatype exp = Ex of Tree.exp
-                 | Nx of Tree.stm 
-                 | Cx of Tree.label * Temp.label -> Tree.stm (*true dest * false dest -> stms that jump to one of the dests*)
+    datatype exp = Ex of Tr.exp
+                 | Nx of Tr.stm 
+                 | Cx of Tr.label * Temp.label -> Tr.stm (*true dest * false dest -> stms that jump to one of the dests*)
             
     datatype level = TOP 
                    | NESTED of {parent: level, frame: F.frame, unique: unit ref}
@@ -37,21 +38,36 @@ struct
 
     (*BEGINNING OF IR TRANSLATION*)
     fun unEx (Ex e) = e
-        | unEx (Nx s) = Tree.ESEQ(s, Tree.CONST 0)
+        | unEx (Nx s) = Tr.ESEQ(s, Tr.CONST 0)
         | unEx (Cx genstm) = 
             let 
                 val r = Temp.newtemp()
                 val t = Temp.newlabel() and f = Temp.newlabel()
             in
-                Tree.ESEQ(Tree.SEQ[Tree.MOVE(Tree.TEMP r, Tree.CONST 1),
+                Tr.ESEQ(Tr.SEQ[Tr.MOVE(Tr.TEMP r, Tr.CONST 1),
                         genstm(t,f),
-                        Tree.LABEL f,
-                        Tree.MOVE(Tree.TEMP r, Tree.CONST 0),
-                        Tree.LABEL t],
-                        Tree.TEMP r)
+                        Tr.LABEL f,
+                        Tr.MOVE(Tr.TEMP r, Tr.CONST 0),
+                        Tr.LABEL t],
+                        Tr.TEMP r)
             end 
     
-    (* fun unNx (Nx s) = s
+    fun unNx (Nx s) = s
         | unNx (Ex e) = T.EXP e
-        | unNx (Cx genstm) = UnNx(genstm) *)
+        | unNx (Cx genstm) = 
+            let 
+                val t = Temp.newlabel()
+            in
+                genstm(t, t)
+                (*T.LABEL t ??? maybe???? 🤡🤫👀👨‍💻🤥*)
+                (*please someone look at this later thank u idfk*)
+            end
+            
+    fun unCx (Cx genstm) = genstm
+        | unCx (Ex e) = 
+            case e of 
+                Tr.CONST 0 => (fun (t, f) => Tr.JUMP(Tr.NAME(f, [f])))
+                | Tr.CONST 1 => (fun (t, f) => Tr.JUMP(Tr.NAME(t, [t])))
+                | exp => (Tr.CJUMP(Tr.EQ, CONST 1, exp, t, f))
+        | unCx (Nx s) = ErrorMsg.impossible "it should never occur in a well typed Tiger program >:("
 end
