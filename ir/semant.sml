@@ -327,9 +327,9 @@ and transDec(venv, tenv, decs, level, break) =
                                      SOME(Env.FunEntry({level=level', label=_, formals=_, result=_})) => level'
                                    | _ => Tr.newLevel {parent=Tr.outermost, name=Temp.newlabel(), formals=[]}
                                    )
-                            val result_ty = 
+                            val resultTy = 
                                 (case result of
-                                    SOME(rt, pos') => transrt rt
+                                    SOME(rt, pos') => transrt(rt, pos')
                                   | NONE => T.UNIT
                                 )
                             val params' = map transparam params
@@ -338,7 +338,7 @@ and transDec(venv, tenv, decs, level, break) =
                               (S.enter(venv, name, Env.VarEntry{access=List.nth(allocatedFormals, curIndex),
                                                                ty=ty}), curIndex + 1)
                             val venv'' = #1 (foldl enterparam (venv', 1) params')
-                            val body' = transExp (venv'', tenv, body, newLevel, break)
+                            val bodyResult = transExp (venv'', tenv, body, newLevel, break)
                         in
                             Tr.procEntryExit {level=newLevel, body=(#exp body')};
                             checkTyOrder(#ty bodyResult, resultTy, "sub", pos, "Function body type doesn't match return type in function " ^ S.name name)
@@ -410,6 +410,13 @@ and transTy(tenv, ty) =
 
 (* transProg needs to take in expression to translate, run transExp, and return unit *)
 fun transProg(exp_to_translate : A.exp) = 
-    (transExp (E.base_venv, E.base_tenv, exp_to_translate); ())
-
+    let
+      val main = Tr.newlabel()
+      val mainLevel = Tr.newLevel({parent = Tr.outermost, name = main, formals = []})
+      val _ = FindEscape.findEscape(exp_to_translate)
+      val transResult = #exp (transExp(E.base_venv, E.base_tenv, exp_to_translate, mainLevel, main))
+    in 
+      Tr.procEntryExit {level = mainLevel, body = transResult}
+      Tr.getResult()
+    end
 end 
