@@ -72,11 +72,36 @@ struct
         | unCx (Nx s) = ErrorMsg.impossible "it should never occur in a well typed Tiger program >:("
     
     (*IF-THEN-ELSE*)
+    fun transIF(test, thenBody, elseBody) = 
+        let
+            val genstm = unCx test
+            val thenBody' = unEx thenBody 
+            val elseBody' = unEx elseBody 
+            val thenStart = Temp.newlabel()
+            val elseStart = Temp.newlabel()
+            val end = Temp.newlabel()
+            val ans = Temp.newtemp()
+        in
+            Ex(Tr.ESEQ[
+                genstm(thenStart, elseStart),
+                Tr.LABEL thenStart, 
+                Tr.MOVE(Tr.TEMP ans, Tr.EXP(thenBody')),
+                Tr.JUMP(Tr.NAME end, [end]),
+                Tr.LABEL elseStart,
+                Tr.MOVE(Tr.TEMP ans, Tr.EXP(elseBody')),
+                Tr.LABEL end
+            ], Tr.TEMP ans)
+        end
 
     (*FOR*)
-
+    fun transFOR() = 
+        
     (*WHILE*)
+    fun transWHILE() =
     
+    (*BREAK*)
+    fun transBREAK(break) = Nx(Tr.JUMP(Tr.NAME break, [break]))
+
     (*ASSIGN*)
     fun transAssign(left, right) =
         let 
