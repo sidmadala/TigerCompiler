@@ -17,7 +17,6 @@ struct
     (*newLevel called by transDec in Semant to create a new nesting level for each function*)
     (*this function in turn calls Frame.newFrame to make a new frame*)
     fun newLevel({parent, name, formals}) = NESTED{parent = parent, frame = F.newFrame{name=name, formals=formals}, unique = ref ()}
-        |newLevel(_) = ErrorMsg.impossible "wrong arguments to newLevel"
 
     (*Returns nothing if TOP level, get formals converted into accesses if NESTED*)
     fun formals(TOP) = []
@@ -44,7 +43,7 @@ struct
                 val r = Temp.newtemp()
                 val t = Temp.newlabel() and f = Temp.newlabel()
             in
-                Tree.ESEQ(seq[Tree.MOVE(Tree.TEMP r, Tree.CONST 1),
+                Tree.ESEQ(Tree.SEQ[Tree.MOVE(Tree.TEMP r, Tree.CONST 1),
                         genstm(t,f),
                         Tree.LABEL f,
                         Tree.MOVE(Tree.TEMP r, Tree.CONST 0),
