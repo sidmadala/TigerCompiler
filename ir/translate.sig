@@ -10,6 +10,6 @@ formals: bool list} -> level
 val formals : level -> access list
 val allocLocal : level -> bool -> access
 val unEx : exp -> Tree.exp
-(* val unNx : exp -> Tree.stm
-val unCx : exp -> (Temp.label * Temp.label -> Tree.stm) *)
+val unNx : exp -> Tree.stm
+val unCx : exp -> (Temp.label * Temp.label -> Tree.stm)
 end

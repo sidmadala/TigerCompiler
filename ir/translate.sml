@@ -1,12 +1,12 @@
-structure F = MipsFrame
-structure Tr = Tree
-
 structure Translate : TRANSLATE = 
 (*manages local variables and static function nesting for semant + static link stuff*)
 struct
-    datatype exp = Ex of Tr.exp
-                 | Nx of Tr.stm 
-                 | Cx of Tr.label * Temp.label -> Tr.stm (*true dest * false dest -> stms that jump to one of the dests*)
+    structure T = Tree
+    structure F = MipsFrame
+
+    datatype exp = Ex of T.exp
+                 | Nx of T.stm 
+                 | Cx of T.label * Temp.label -> T.stm (*true dest * false dest -> stms that jump to one of the dests*)
             
     datatype level = TOP 
                    | NESTED of {parent: level, frame: F.frame, unique: unit ref}
@@ -38,37 +38,37 @@ struct
 
     (*BEGINNING OF IR TRANSLATION*)
     fun unEx (Ex e) = e
-        | unEx (Nx s) = Tr.ESEQ(s, Tr.CONST 0)
+        | unEx (Nx s) = T.ESEQ(s, T.CONST 0)
         | unEx (Cx genstm) = 
             let 
                 val r = Temp.newtemp()
                 val t = Temp.newlabel() and f = Temp.newlabel()
             in
-                Tr.ESEQ(Tr.SEQ[Tr.MOVE(Tr.TEMP r, Tr.CONST 1),
+                T.ESEQ(T.SEQ[T.MOVE(T.TEMP r, T.CONST 1),
                         genstm(t,f),
-                        Tr.LABEL f,
-                        Tr.MOVE(Tr.TEMP r, Tr.CONST 0),
-                        Tr.LABEL t],
-                        Tr.TEMP r)
+                        T.LABEL f,
+                        T.MOVE(T.TEMP r, T.CONST 0),
+                        T.LABEL t],
+                        T.TEMP r)
             end 
     
     fun unNx (Nx s) = s
-        | unNx (Ex e) = Tr.EXP e
+        | unNx (Ex e) = T.EXP e
         | unNx (Cx genstm) = 
             let 
                 val t = Temp.newlabel()
             in
                 genstm(t, t)
-                (*Tr.LABEL t ??? maybe???? 🤡🤫👀👨‍💻🤥*)
+                (*T.LABEL t ??? maybe???? 🤡🤫👀👨‍💻🤥*)
                 (*please someone look at this later thank u idfk*)
             end
             
     fun unCx (Cx genstm) = genstm
         | unCx (Ex e) = 
             (case e of 
-                Tr.CONST 0 => (fn (t, f) => Tr.JUMP(Tr.NAME(f), [f]))
-                | Tr.CONST 1 => (fn (t, f) => Tr.JUMP(Tr.NAME(t), [t]))
-                | exp => (fn (t, f) => Tr.CJUMP(Tr.EQ, Tr.CONST 1, exp, t, f)))
+                T.CONST 0 => (fn (t, f) => T.JUMP(T.NAME(f), [f]))
+                | T.CONST 1 => (fn (t, f) => T.JUMP(T.NAME(t), [t]))
+                | exp => (fn (t, f) => T.CJUMP(T.EQ, T.CONST 1, exp, t, f)))
         | unCx (Nx s) = ErrorMsg.impossible "it should never occur in a well typed Tiger program >:("
     
     (*IF-THEN-ELSE*)
@@ -79,28 +79,42 @@ struct
             val elseBody' = unEx elseBody 
             val thenStart = Temp.newlabel()
             val elseStart = Temp.newlabel()
-            val end = Temp.newlabel()
+            val endLabel = Temp.newlabel()
             val ans = Temp.newtemp()
         in
-            Ex(Tr.ESEQ[
-                genstm(thenStart, elseStart),
-                Tr.LABEL thenStart, 
-                Tr.MOVE(Tr.TEMP ans, Tr.EXP(thenBody')),
-                Tr.JUMP(Tr.NAME end, [end]),
-                Tr.LABEL elseStart,
-                Tr.MOVE(Tr.TEMP ans, Tr.EXP(elseBody')),
-                Tr.LABEL end
-            ], Tr.TEMP ans)
+            Ex(T.ESEQ(
+                T.SEQ[genstm(thenStart, elseStart),
+                T.LABEL thenStart, 
+                T.MOVE(T.TEMP ans, thenBody'),
+                T.JUMP(T.NAME endLabel, [endLabel]),
+                T.LABEL elseStart,
+                T.MOVE(T.TEMP ans, elseBody'),
+                T.LABEL endLabel]
+                , T.TEMP ans))
         end
 
     (*FOR*)
-    fun transFOR(var, hi, lo, body, endLabel) = 
+    fun transFOR(hi, lo, body, endLabel) = 
         let
-          val var' = unEx var
           val hi' = unEx hi
           val lo' = unEx lo
           val body' = unNx body
+          val hiTemp = Temp.newtemp()
+          val i = Temp.newtemp() 
+          val incrementLabel = Temp.newlabel()
+          val loopBodyLabel = Temp.newlabel()
         in
+            Nx(T.SEQ[
+                T.MOVE(T.TEMP i, lo'),
+                T.MOVE(T.TEMP hiTemp, hi'),
+                T.CJUMP(T.LE, T.TEMP i, hi', loopBodyLabel, endLabel),
+                T.LABEL incrementLabel,
+                T.MOVE(T.TEMP i, T.BINOP(T.PLUS, T.CONST 1, T.TEMP i)),
+                T.LABEL loopBodyLabel,
+                body',
+                T.CJUMP(T.LE, T.TEMP i, T.TEMP hiTemp, incrementLabel, endLabel),
+                T.LABEL endLabel
+            ])
         end
         
     (*WHILE*)
@@ -111,18 +125,18 @@ struct
             val genstm = unCx test
             val body' = unEx body
         in
-            Nx(Tr.SEQ[
-                Tr.JUMP(Tr.NAME testLabel, [testLabel]),
-                Tr.LABEL bodyLabel, 
-                Ex(body'),
-                Tr.LABEL testLabel
+            Nx(T.SEQ[
+                T.JUMP(T.NAME testLabel, [testLabel]),
+                T.LABEL bodyLabel, 
+                T.EXP body',
+                T.LABEL testLabel,
                 genstm(bodyLabel, endLabel),
-                Tr.LABEL endLabel
+                T.LABEL endLabel
             ])
         end
     
     (*BREAK*)
-    fun transBREAK(break) = Nx(Tr.JUMP(Tr.NAME break, [break]))
+    fun transBREAK(break) = Nx(T.JUMP(T.NAME break, [break]))
 
     (*ASSIGN*)
     fun transAssign(left, right) =
@@ -130,12 +144,12 @@ struct
             val left' = unEx left 
             val right' = unEx right
         in
-            Nx(Tr.MOVE(left',right'))
+            Nx(T.MOVE(left',right'))
         end
     
     (*DATA STUCTURES*)
-    fun transNIL = Ex(Tr.CONST 0)
-    fun transINT(n) = Ex(Tr.CONST n)
+    fun transNIL(_) = Ex(T.CONST 0)
+    fun transINT(n) = Ex(T.CONST n)
     (* fun transString() = ()
     fun transRecord() = ()
     fun transArray() = () *)
