@@ -30,7 +30,7 @@ IR:
     - [x] nilexp
     - [x] intexp
     - [ ] stringexp -> there is some fragment stuff here that i do not want to unpack yet 
-    - [ ] opexp
+    - [x] opexp
     - [ ] callexp
     - [ ] seqexp
     - [x] assignexp

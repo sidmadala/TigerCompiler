@@ -134,7 +134,7 @@ struct
                 T.LABEL endLabel
             ])
         end
-    
+
     (*BREAK*)
     fun transBREAK(break) = Nx(T.JUMP(T.NAME break, [break]))
 
@@ -146,7 +146,24 @@ struct
         in
             Nx(T.MOVE(left',right'))
         end
-    
+
+    (*BINOPS*)
+    fun transBinOp(op, left, right) = 
+        let
+            val left' = unEx left
+            val right' = unEx right
+            val op' =
+                case op of 
+                    Absyn.PlusOp => T.PLUS
+                   |Absyn.MinusOp => T.MINUS
+                   |Absyn.TimesOp => T.MUL
+                   |Absyn.DivideOp => T.DIV   
+        in
+            Ex(T.BINOP(op', left', right'))
+        end
+
+    (*RELOPS -> do when you understand how strings work*)
+
     (*DATA STUCTURES*)
     fun transNIL(_) = Ex(T.CONST 0)
     fun transINT(n) = Ex(T.CONST n)
