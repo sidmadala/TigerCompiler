@@ -14,9 +14,10 @@ Frame Analysis:
 - [x] modify VarEntry and FunEntry in env.sml
 - [x]  mipsframe.sml
 - [x]  findescape.sml
-- [ ]  translate.sml
+- [x]  translate.sml
 - [ ]  semant.sml
 
+NOTE - I changed Tr.SEQ -> stm * stm to Tr.SEQ -> stm list 
 IR:
 - [ ] translate.sml
 - [ ] semant.sml

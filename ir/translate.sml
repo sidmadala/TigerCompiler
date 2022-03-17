@@ -70,4 +70,27 @@ struct
                 | Tr.CONST 1 => (fn (t, f) => Tr.JUMP(Tr.NAME(t), [t]))
                 | exp => (fn (t, f) => Tr.CJUMP(Tr.EQ, Tr.CONST 1, exp, t, f)))
         | unCx (Nx s) = ErrorMsg.impossible "it should never occur in a well typed Tiger program >:("
+    
+    (*IF-THEN-ELSE*)
+
+    (*FOR*)
+
+    (*WHILE*)
+    
+    (*ASSIGN*)
+    fun transAssign(left, right) =
+        let 
+            val left' = unEx left 
+            val right' = unEx right
+        in
+            Nx(Tr.MOVE(left',right'))
+        end
+    
+    (*DATA STUCTURES*)
+    fun transNIL = Ex(Tr.CONST 0)
+    fun transINT(n) = Ex(Tr.CONST n)
+    (* fun transString() = ()
+    fun transRecord() = ()
+    fun transArray() = () *)
+
 end

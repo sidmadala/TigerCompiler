@@ -31,7 +31,7 @@ structure Tree : TREE =
 struct
   type label=Temp.label
   type size = int
-  
+
 datatype stm = SEQ of stm list
              | LABEL of label
              | JUMP of exp * label list
