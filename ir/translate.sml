@@ -59,7 +59,7 @@ struct
                 val t = Temp.newlabel()
             in
                 genstm(t, t)
-                (*T.LABEL t ??? maybe???? 🤡🤫👀👨‍💻🤥*)
+                (*Tr.LABEL t ??? maybe???? 🤡🤫👀👨‍💻🤥*)
                 (*please someone look at this later thank u idfk*)
             end
             
@@ -94,10 +94,32 @@ struct
         end
 
     (*FOR*)
-    fun transFOR() = 
+    fun transFOR(var, hi, lo, body, endLabel) = 
+        let
+          val var' = unEx var
+          val hi' = unEx hi
+          val lo' = unEx lo
+          val body' = unNx body
+        in
+        end
         
     (*WHILE*)
-    fun transWHILE() =
+    fun transWHILE(test, body, endLabel) = 
+        let 
+            val testLabel = Temp.newlabel()
+            val bodyLabel = Temp.newlabel()
+            val genstm = unCx test
+            val body' = unEx body
+        in
+            Nx(Tr.SEQ[
+                Tr.JUMP(Tr.NAME testLabel, [testLabel]),
+                Tr.LABEL bodyLabel, 
+                Ex(body'),
+                Tr.LABEL testLabel
+                genstm(bodyLabel, endLabel),
+                Tr.LABEL endLabel
+            ])
+        end
     
     (*BREAK*)
     fun transBREAK(break) = Nx(Tr.JUMP(Tr.NAME break, [break]))

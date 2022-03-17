@@ -27,15 +27,17 @@ IR:
     - [ ] subscript
 
     exps:
-    - [ ] varexp, nilexp, intexp, stringexp
+    - [x] nilexp
+    - [x] intexp
+    - [ ] stringexp -> there is some fragment stuff here that i do not want to unpack yet 
     - [ ] opexp
     - [ ] callexp
     - [ ] seqexp
-    - [ ] assignexp
-    - [ ] ifexp
-    - [ ] whileexp
-    - [ ] forexp
-    - [ ] breakexp
+    - [x] assignexp
+    - [x] ifexp
+    - [x] whileexp
+    - [x] forexp
+    - [x] breakexp
     - [ ] letexp
     - [ ] arrayexp
     - [ ] recordexp
@@ -44,10 +46,5 @@ IR:
     - [ ] fundec
     - [ ] vardec
     - [ ] typedec
-
-    types:
-    - [ ] namety
-    - [ ] recordty
-    - [ ] arrayty
 
 - [ ] semant.sml
