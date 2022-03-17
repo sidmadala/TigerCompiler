@@ -2,7 +2,7 @@ structure Err = ErrorMsg
 structure A = Absyn
 structure E = Env
 structure S = Symbol
-
+structure Tr = Translate
 structure Semant =
 struct
 
@@ -59,7 +59,7 @@ fun actualTy(tenv, ty) =
         | someTy => someTy
 
 (* beginning of main transExp function *)
-fun transExp(venv, tenv, exp) =
+fun transExp(venv, tenv, exp, level, break) =
     let
       fun trexp(A.NilExp) = {exp = (), ty = T.NIL}
         | trexp(A.IntExp(i)) = {exp = (), ty = T.INT}
@@ -233,30 +233,38 @@ fun transExp(venv, tenv, exp) =
       trexp(exp)
     end
 
-and transDec(venv, tenv, decs) = 
+and transDec(venv, tenv, decs, level, break) = 
         let 
           (* VarDec 🐶 *)
-          fun trdec(venv, tenv, A.VarDec({name, escape, typ, init, pos})) =
+          fun trdec(venv, tenv, A.VarDec({name, escape, typ, init, pos}), expList) =
               
                 let
-                val initTy = #ty (transExp(venv, tenv, init));
+                val initTy = #ty (transExp(venv, tenv, init, level, break));
+                val access' = Tr.allocLocal level (!escape)
+                fun appendExpList() =
+                      let
+                        val left = Tr.simpleVarIR(access', level)
+                        val right = #exp (transExp(venv, tenv, init, level, break))
+                      in
+                        expList @ [Tr.assignIR(left, right)]
+                      end
                 in
                 case typ of
                     SOME(symbol, pos) =>
                         (case S.look(tenv, symbol) of
                             SOME ty => (checkTyOrder(actualTy(tenv, ty), initTy, "super", pos, "types mismatch");
-                                       {venv=S.enter(venv, name, (Env.VarEntry{ty = actualTy(tenv, ty)})), tenv = tenv})
-                          | NONE => (Err.error pos "type not recognized"; {venv = venv, tenv = tenv})
+                                       {venv=S.enter(venv, name, (Env.VarEntry{access = access', ty = actualTy(tenv, ty)})), tenv = tenv, expList = appendExpList()})
+                          | NONE => (Err.error pos "type not recognized"; {venv = venv, tenv = tenv, expList = appendExpList()})
                         )
                   | NONE =>
                         (if String.compare(tyToString(initTy), "NIL") = EQUAL then Err.error pos "error: initializing nil expressions not constrained by record type" else ();
-                        {venv=S.enter(venv, name, (Env.VarEntry{ty = initTy})),
-                        tenv = tenv})
+                        {venv=S.enter(venv, name, (Env.VarEntry{access = access', ty = initTy})),
+                        tenv = tenv, expList = appendExpList()})
                         
                 end
                 
           (* TypeDec  TODO: should we break the cycle here or add extra stuff in actualTy to avoid inifite loop?*)
-          | trdec(venv, tenv, A.TypeDec(tydeclist)) =
+          | trdec(venv, tenv, A.TypeDec(tydeclist), expList) =
               let
                 val tenvDummyTy = foldl (fn({name, ty, pos}, ans) => S.enter(ans, name, T.BOTTOM)) tenv tydeclist
                 val tenvActualTy = foldl (fn({name, ty, pos}, ans) => S.enter(ans, name, transTy(tenvDummyTy, ty))) tenv tydeclist
@@ -276,11 +284,11 @@ and transDec(venv, tenv, decs) =
               in
                 foldl (fn({name, ty, pos}, l) => if List.exists (fn s => String.compare(s, S.name name) = EQUAL) l then (Err.error pos "error : two types of same name in mutually recursive tydec"; l) else (S.name name :: l))  [] tydeclist;
                 foldl checkIllegalCycle () tydeclist;
-                {tenv = tenvActualTy, venv = venv}
+                {tenv = tenvActualTy, venv = venv, expList = expList}
               end
              (* FunctionDec  TODO: 1. use actualTy?? 2. should return type use
              * sub or eq *)
-          | trdec(venv, tenv, A.FunctionDec(fundeclist)) =
+          | trdec(venv, tenv, A.FunctionDec(fundeclist), expList) =
                 let 
                     fun transrt (rt, pos) =
                         (case S.look(tenv, rt) of 
@@ -292,13 +300,50 @@ and transDec(venv, tenv, decs) =
                             SOME ty => {name = name, ty = actualTy(tenv, ty)}
                           | NONE => (Err.error pos ("Parameter type unrecognized:" ^ S.name typ); {name = name, ty = T.BOTTOM})
                         )
-                    fun enterFuncs ({name, params, body, pos, result=SOME(rt, pos')}, venv) = 
+                    fun enterFuncs (func, venv) = 
+                        let
+                          val newlabel = Temp.newlabel()
+                          fun getEscape {name=name', escape=escape', typ=typ', pos=pos'} = !escape'
+                          fun genEscapeList params' = map getEscape params'
+                        in
+                          case func of 
+                              {name, params, body, pos, result=SOME(rt, pos')} =>
+                                    S.enter(venv, name, Env.FunEntry{level=Translate.newLevel {parent=level, name=newlabel, formals=genEscapeList params},
+                                                                     label=newlabel, formals= map #ty (map transparam params), result=transrt rt})
+                            | {name, params, body, pos, result=NONE} =>
+                                    S.enter(venv, name, Env.FunEntry{level=Translate.newLevel {parent=level, name=newlabel, formals=genEscapeList params},
+                                                                     label=newlabel, formals= map #ty (map transparam params), result=T.UNIT})
+                        end
+                    (*fun enterFuncs ({name, params, body, pos, result=SOME(rt, pos')}, venv) = 
                             S.enter(venv, name, Env.FunEntry{formals= map #ty
                             (map transparam params), result=transrt(rt,pos)})
                       | enterFuncs ({name, params, body, pos, result=NONE}, venv) = 
-                            S.enter(venv, name, Env.FunEntry{formals= map #ty (map transparam params), result=T.UNIT})
+                            S.enter(venv, name, Env.FunEntry{formals= map #ty (map transparam params), result=T.UNIT})*)
                     val venv' = foldl enterFuncs venv fundeclist
                     fun checkfundec({name, params, body, pos, result}) = 
+                        let 
+                            val newLevel = 
+                                (case S.look(venv', name) of
+                                     SOME(Env.FunEntry({level=level', label=_, formals=_, result=_})) => level'
+                                   | _ => Tr.newLevel {parent=Tr.outermost, name=Temp.newlabel(), formals=[]}
+                                   )
+                            val result_ty = 
+                                (case result of
+                                    SOME(rt, pos') => transrt rt
+                                  | NONE => T.UNIT
+                                )
+                            val params' = map transparam params
+                            val allocatedFormals = Tr.formals newLevel
+                            fun enterparam ({name, escape, ty, pos}, (venv, curIndex)) = 
+                              (S.enter(venv, name, Env.VarEntry{access=List.nth(allocatedFormals, curIndex),
+                                                               ty=ty}), curIndex + 1)
+                            val venv'' = #1 (foldl enterparam (venv', 1) params')
+                            val body' = transExp (venv'', tenv, body, newLevel, break)
+                        in
+                            Tr.procEntryExit {level=newLevel, body=(#exp body')};
+                            checkTyOrder(#ty bodyResult, resultTy, "sub", pos, "Function body type doesn't match return type in function " ^ S.name name)
+                        end 
+                    (*fun checkfundec({name, params, body, pos, result}) = 
                         let 
                             val resultTy = 
                                 (case result of
@@ -309,16 +354,16 @@ and transDec(venv, tenv, decs) =
                             val bodyResult = transExp (venv'', tenv, body)
                         in
                           checkTyOrder(#ty bodyResult, resultTy, "sub", pos, "Function body type doesn't match return type in function " ^ S.name name)
-                        end 
+                        end *)
                     fun foldfundec (fundec, ()) = checkfundec fundec
                 in
                     foldl (fn({name, params, body, pos, result}, l) => if List.exists (fn s => String.compare(s, S.name name) = EQUAL) l then (Err.error pos "error : two types of same name in mutually recursive fundec"; l) else (S.name name :: l))  [] fundeclist;
                     foldr foldfundec () fundeclist;
-                    {venv=venv', tenv=tenv}
+                    {venv=venv', tenv=tenv, expList = expList}
                 end
-            and folddec(dec, {venv, tenv}) = trdec(venv, tenv, dec)
+            and folddec(dec, {venv, tenv, expList}) = trdec(venv, tenv, dec, expList)
         in
-            foldl folddec {venv=venv, tenv=tenv} decs
+            foldl folddec {venv=venv, tenv=tenv, expList=[]} decs
         end
         
 and transTy(tenv, ty) =
