@@ -43,8 +43,7 @@ IR:
     - [ ] recordexp
 
     decs:
-    - [ ] fundec
-    - [ ] vardec
-    - [ ] typedec
+    - [ ] vardec 
+    - [ ] fundec -> i think this prob goes last (pg. 167-168)
 
 - [ ] semant.sml

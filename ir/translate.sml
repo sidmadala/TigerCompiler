@@ -182,6 +182,8 @@ struct
             Ex(T.CALL(T.NAME funLabel, argsEx))
         end
 
+    fun transLET() = ()
+    fun transSEQEXP() = () (*unclear if we actually need this tbh*)
     (*RELOPS -> do when you understand how strings work*)
 
     (*DATA STUCTURES*)
@@ -191,4 +193,9 @@ struct
     fun transString() = ()
     fun transRecord() = ()
 
+    (*also have to do vars + deal with vardec here*)
+    fun transVarDec(level, varLabel) = ()
+    fun transSimpleVar() = () 
+    fun transFieldVar() = ()
+    fun transSubscriptVar() = ()
 end
