@@ -53,7 +53,6 @@ struct
                     fun addParamEnv({name, escape, typ, pos}, env) = S.enter(env, name, (d+1, escape))
                     fun trfundec {name, params, result, body, pos} = traverseExp((foldl addParamEnv env params), d + 1, body)
                 in
-                    (*BUG: something wrong with fundeclist as the param of trfundec idk*)
                     List.app trfundec fundeclist; 
                     env
                 end

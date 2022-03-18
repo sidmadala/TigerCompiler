@@ -16,6 +16,10 @@ struct
 
     datatype frag = PROC of {body: Tree.stm, frame: frame}
                   | STRING of Temp.label * string
+    
+    (* Checks if value is inFrame and if so finds its offset from the framepointer, else return register *)
+    fun checkOffset (InReg(v)) (framePointer) = T.TEMP(v)
+      | checkOffset (InFrame(v)) (framePointer) = T.MEM(T.BINOP(T.PLUS, T.TEMP(v), framePointer))
 
     (* Getters for name and formals of frame *)
     fun name {name=name, formals=_, numLocals=_, currentOffset=_} = name

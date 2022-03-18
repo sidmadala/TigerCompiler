@@ -1,5 +1,7 @@
 signature FRAME = 
 sig 
+    val FP : Temp.temp
+    val RV : Temp.temp
     type frame
     type access 
     datatype frag = PROC of {body: Tree.stm, frame: frame}
@@ -10,4 +12,5 @@ sig
     val formals : frame -> access list 
     val allocLocal : frame -> bool -> access
     val externalCall: string * Tree.exp list -> Tree.exp
+    val checkOffset: access -> Tree.exp -> Tree.exp
 end
