@@ -182,8 +182,21 @@ struct
             Ex(T.CALL(T.NAME funLabel, argsEx))
         end
 
-    fun transLET() = ()
-    fun transSEQEXP() = () (*unclear if we actually need this tbh*)
+    (*LET*)
+    fun transLET(decs, body) = 
+        let 
+            val body' = unEx body
+        in
+            case List.length decs of 
+                0 => Ex(body')
+              | _ => Ex(T.ESEQ(T.SEQ (map unNx decs), body'))  
+        end
+
+    (*SEQEXP -> unclear if ... .. . . this is right? but i guess it can't hurt/we'll find out when we test*)
+    fun transSEQEXP([]) = Ex(T.CONST 0) 
+        |transSEQEXP([exp]) = exp
+        |transSEQEXP(a::exps) = Ex(T.ESEQ(unNx(a), unEx(transSEQEXP(exps))))
+
     (*RELOPS -> do when you understand how strings work*)
 
     (*DATA STUCTURES*)

@@ -32,13 +32,13 @@ IR:
     - [ ] stringexp -> there is some fragment stuff here that i do not want to unpack yet 
     - [x] opexp
     - [ ] callexp
-    - [ ] seqexp
+    - [x] seqexp
     - [x] assignexp
     - [x] ifexp
     - [x] whileexp
     - [x] forexp
     - [x] breakexp
-    - [ ] letexp
+    - [x] letexp
     - [x] arrayexp
     - [ ] recordexp
 
