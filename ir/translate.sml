@@ -180,6 +180,7 @@ struct
                 |Absyn.GtOp => T.GT
                 |Absyn.LeOp => T.LE
                 |Absyn.GeOp => T.GE
+                |_ => ErrorMsg.impossible "we're using transRelOp wrong"
         in
             case (oper', typ) of
                  (T.EQ, Types.STRING) => Ex(F.externalCall("strEq", [left', right']))
@@ -189,6 +190,14 @@ struct
                 |_ => Cx(fn (t, f) => T.CJUMP(oper', left', right', t, f))
         end 
 
+    (* Helper function for frames *)
+    fun findFrame (_, TOP) = (ErrorMsg.error ~1 "level not found via static links"; T.CONST 0)
+      | findFrame (TOP, _) = (ErrorMsg.error ~1 "value declared in outermost level"; T.CONST 0)
+      | findFrame (decLevel as NESTED{parent=parent, frame=frame, unique=unique}, callLevel as NESTED{parent=parent', frame=frame', unique=unique'}) =
+            if unique = unique'
+            then T.TEMP(F.FP)  (* found static link we want *)
+            else T.MEM(findFrame(decLevel, parent'))  (* Follow static links *)
+
     (*CALL*)
     fun transCall(_, TOP, funLabel, args) = 
         let
@@ -197,15 +206,13 @@ struct
             Ex(T.CALL(T.NAME funLabel, argsEx))
         end
 
-        |transCall(callLevel, fnLevel, funLabel, args) = 
+      | transCall(callLevel, NESTED{parent=parent, frame=frame, unique=unique}, funLabel, args) = 
         let
-            val staticLink = ()
-            (*TODO: STATIC LINK STUFF*)
+            val staticLink = findFrame(parent, callLevel)
             val argsEx = map unEx args
         in
             (*this is correct, but sl not done yet so compiler will throw errors*)
-            (* Ex(T.CALL(T.NAME funLabel, staticLink::argsEx)) *)
-            Ex(T.CALL(T.NAME funLabel, argsEx))
+            Ex(T.CALL(T.NAME funLabel, staticLink::argsEx))
         end
 
     (*LET*)
@@ -288,6 +295,15 @@ struct
 
     fun transFieldVar(varEx, index) = Ex(T.MEM(T.BINOP(T.PLUS, unEx varEx, T.CONST(index * F.wordSize))))
 
-
-    fun transSubscriptVar() = ()
+    fun transSubscriptVar(arrRef, indexRef) = 
+        let
+            val addr = Temp.newtemp()
+            val arr = unEx arrRef
+            val index = unEx indexRef
+        in
+            Ex(T.ESEQ(
+               T.MOVE(T.TEMP(addr),
+                       T.BINOP(T.PLUS, arr, T.BINOP(T.MUL, index, T.CONST(F.wordSize)))),
+               T.MEM(T.TEMP(addr))))
+        end
 end

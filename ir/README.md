@@ -13,9 +13,9 @@ IR:
 - translate.sml
 
     vars:
-    - [ ] simple
-    - [ ] field
-    - [ ] subscript
+    - [x] simple
+    - [x] field
+    - [x] subscript
 
     exps:
     - [x] nilexp

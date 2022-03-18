@@ -218,7 +218,7 @@ fun transExp(venv, tenv, exp, level, break) =
       and trvar(A.SimpleVar(sym, pos)) =
         (case S.look(venv, sym) of
               SOME(Env.VarEntry({access, ty})) => {exp=transSimpleVar(access, level), ty= ty} 
-            | SOME(Env.FunEntry(_) => (Err.error pos ("error: variable is a function " ^ S.name sym); {exp=Tr.transINT(0), ty= T.BOTTOM})
+            | SOME(Env.FunEntry(_)) => (Err.error pos ("error: variable is a function " ^ S.name sym); {exp=Tr.transINT(0), ty= T.BOTTOM})
             | NONE => (Err.error pos ("error: variable not declared " ^ S.name sym); {exp=Tr.transINT(0), ty= T.BOTTOM})
         )
           (* FieldVar 🐶*)
