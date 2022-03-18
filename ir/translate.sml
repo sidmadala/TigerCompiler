@@ -200,7 +200,7 @@ struct
     (*RELOPS -> do when you understand how strings work*)
 
     (*DATA STUCTURES*)
-    fun transNIL(_) = Ex(T.CONST 0)
+    fun transNIL() = Ex(T.CONST 0)
     fun transINT(n) = Ex(T.CONST n)
     fun transArray(size, init) = Ex(T.CALL(T.NAME(Temp.namedlabel "initArray"), [unEx size, unEx init]))
     fun transString() = ()

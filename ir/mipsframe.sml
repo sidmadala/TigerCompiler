@@ -4,16 +4,18 @@ struct
     (* Defined by MIPS ISA *)
     val wordSize = 4
     val argRegs = 4
-    val FP = TEMP.newtemp()
-    val RV = TEMP.newtemp()
+    val FP = Temp.newtemp()
+    val RV = Temp.newtemp()
+
     (* Where value is held *)
     datatype access = InFrame of int (* InFrame(X) => memory location at offset X from FP *) 
                     | InReg of Temp.temp (* InReg(t1) => value held in register t1 *)
-    datatype frag = PROC of {body: Tree.stm, frame: frame}
-                  | STRING of Temp.label * string
-                  
+
     (* Frame definition *)
     type frame = {name: Temp.label, formals: access list, numLocals: int ref, currentOffset: int ref}
+
+    datatype frag = PROC of {body: Tree.stm, frame: frame}
+                  | STRING of Temp.label * string
 
     (* Getters for name and formals of frame *)
     fun name {name=name, formals=_, numLocals=_, currentOffset=_} = name
