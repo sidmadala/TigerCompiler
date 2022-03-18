@@ -61,7 +61,7 @@ fun actualTy(tenv, ty) =
 (* beginning of main transExp function *)
 fun transExp(venv, tenv, exp, level, break) =
     let
-      fun trexp(A.NilExp) = {exp = Tr.transNIL(0), ty = T.NIL}
+      fun trexp(A.NilExp) = {exp = Tr.transNIL(), ty = T.NIL}
         | trexp(A.IntExp(i)) = {exp = Tr.transINT(i), ty = T.INT}
         | trexp(A.StringExp(s, pos)) = {exp = Tr.transSTRING(s), ty = T.STRING}
         | trexp(A.VarExp(var)) = trvar(var)
@@ -205,13 +205,13 @@ fun transExp(venv, tenv, exp, level, break) =
                                         exp))))))
                                 in
                                     if List.length(f(tenv)) <> List.length(fields)
-                                    then (Err.error pos ("record list is wrong length: " ^ S.name typ); {exp=Tr.transNIL(0), ty= T.NIL})
+                                    then (Err.error pos ("record list is wrong length: " ^ S.name typ); {exp=Tr.transNIL(), ty= T.NIL})
                                     else (foldl check () (ListPair.zip(fields,
                                     f(tenv))); {exp=Tr.transRecord(map #exp (map trexp (map #2 fields))), ty= actualTy(tenv, x)})
                                 end
-                          | _ => (Err.error pos ("error : expected record type, not: " ^ S.name typ); {exp=Tr.transNIL(0), ty=T.NIL})
+                          | _ => (Err.error pos ("error : expected record type, not: " ^ S.name typ); {exp=Tr.transNIL(), ty=T.NIL})
                         )
-                  | NONE => (Err.error pos ("error : invalid record type: " ^ S.name typ); {exp=Tr.transNIL(0), ty=T.NIL})
+                  | NONE => (Err.error pos ("error : invalid record type: " ^ S.name typ); {exp=Tr.transNIL(), ty=T.NIL})
                 )
 
           (* SimpleVar  🐶*)
@@ -353,7 +353,7 @@ and transDec(venv, tenv, decs, level, break) =
                             val venv'' = #1 (foldl enterparam (venv', 1) params')
                             val bodyResult = transExp (venv'', tenv, body, newLevel, break)
                         in
-                            Tr.procEntryExit {level=newLevel, body=(#exp body')};
+                            Tr.procEntryExit {level=newLevel, body=(#exp bodyResult)};
                             checkTyOrder(#ty bodyResult, resultTy, "sub", pos, "Function body type doesn't match return type in function " ^ S.name name)
                         end 
                     (*fun checkfundec({name, params, body, pos, result}) = 
