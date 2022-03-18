@@ -312,7 +312,7 @@ struct
       | procEntryExit ({level = NESTED{parent, frame, unique}, body}) =
         let 
             val body' = unEx body
-            val body'' = F.PROC{body = T.MOVE(T.TEMP F.RV, body'), frame = frame}
+            val body'' = F.PROC{body = T.MOVE(T.TEMP F.RV, body'), frame = frame}  (* Why the move? *)
         in 
             fraglist := !fraglist @ [body'']  (* What is the order here? *)
         end
