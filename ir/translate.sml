@@ -223,16 +223,14 @@ struct
         |transSEQEXP([exp]) = exp
         |transSEQEXP(a::exps) = Ex(T.ESEQ(unNx(a), unEx(transSEQEXP(exps))))
 
-    (*RELOPS -> do when you understand how strings work*)
-
     (*DATA STUCTURES*)
     fun transNIL() = Ex(T.CONST 0)
     fun transINT(n) = Ex(T.CONST n)
 
-    (*ARRAY*)
+    (*ARRAYS*)
     fun transArray(size, init) = Ex(F.externalCall("initArray", [unEx size, unEx init]))
 
-    (*STRING*)
+    (*STRINGS*)
     fun transString(string) = 
         let
             fun findStringFrag(F.PROC(_)) = false
@@ -251,7 +249,13 @@ struct
                 |_ => ErrorMsg.impossible "something wrong with findStringFrag"
         end
 
-    fun transRecord() = ()
+    (*RECORDS - pg 164*)
+    fun transRecord(fields) =
+        let 
+            val r = Temp.newtemp()
+        in
+            Ex(T.MOVE((),T.TEMP r))
+        end
 
     (*VARIABLES*)
     fun transSimpleVar() = () 

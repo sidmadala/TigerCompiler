@@ -8,15 +8,6 @@ CM.make "sources.cm";
 
 Main.main "/path/to/test.tig";
 
-
-
-Frame Analysis:
-- [x] modify VarEntry and FunEntry in env.sml
-- [x]  mipsframe.sml
-- [x]  findescape.sml
-- [x]  translate.sml
-- [x]  semant.sml
-
 NOTE - I changed Tr.SEQ -> stm * stm to Tr.SEQ -> stm list 
 IR:
 - translate.sml
@@ -40,7 +31,7 @@ IR:
     - [x] breakexp
     - [x] letexp
     - [x] arrayexp
-    - [ ] recordexp
+    - [x] recordexp
 
     decs:
     - [ ] vardec -> do transSimpleVar and then assign 
