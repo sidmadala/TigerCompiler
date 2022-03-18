@@ -61,23 +61,23 @@ fun actualTy(tenv, ty) =
 (* beginning of main transExp function *)
 fun transExp(venv, tenv, exp, level, break) =
     let
-      fun trexp(A.NilExp) = {exp = (), ty = T.NIL}
-        | trexp(A.IntExp(i)) = {exp = (), ty = T.INT}
-        | trexp(A.StringExp(s, pos)) = {exp = (), ty = T.STRING}
+      fun trexp(A.NilExp) = {exp = Tr.transNIL(0), ty = T.NIL}
+        | trexp(A.IntExp(i)) = {exp = Tr.transINT(i), ty = T.INT}
+        | trexp(A.StringExp(s, pos)) = {exp = Tr.transSTRING(s), ty = T.STRING}
         | trexp(A.VarExp(var)) = trvar(var)
 
-        (* SeqExp 🐶*)  
+        (* SeqExp *)  
         | trexp(A.SeqExp([])) = {exp = (), ty = Types.UNIT}
         | trexp(A.SeqExp([(exp, pos)])) = trexp(exp)
         | trexp(A.SeqExp((exp, pos)::l)) = (trexp(exp); trexp(A.SeqExp l))
 
-        (* OpExp: check for type equality 🐶*)
+        (* OpExp: check for type equality *)
         | trexp(A.OpExp{left, oper, right, pos}) = 
           (case oper of 
-              A.PlusOp =>   (checkTyOrder(#ty (trexp left), #ty (trexp right), "arith", pos, "not an integer"); {exp=(), ty=T.INT})
-            | A.MinusOp =>  (checkTyOrder(#ty (trexp left), #ty (trexp right), "arith", pos, "not an integer"); {exp=(), ty=T.INT})
-            | A.TimesOp =>  (checkTyOrder(#ty (trexp left), #ty (trexp right), "arith", pos, "not an integer"); {exp=(), ty=T.INT})
-            | A.DivideOp => (checkTyOrder(#ty (trexp left), #ty (trexp right), "arith", pos, "not an integer"); {exp=(), ty=T.INT})
+              A.PlusOp =>   (checkTyOrder(#ty (trexp left), #ty (trexp right), "arith", pos, "not an integer"); {exp=Tr.transBinOp(A.PlusOp, #exp (trexp left), #exp (trexp right)), ty=T.INT})
+            | A.MinusOp =>  (checkTyOrder(#ty (trexp left), #ty (trexp right), "arith", pos, "not an integer"); {exp=Tr.transBinOp(A.MinusOp, #exp (trexp left), #exp (trexp right)), ty=T.INT})
+            | A.TimesOp =>  (checkTyOrder(#ty (trexp left), #ty (trexp right), "arith", pos, "not an integer"); {exp=Tr.transBinOp(A.TimesOp, #exp (trexp left), #exp (trexp right)), ty=T.INT})
+            | A.DivideOp => (checkTyOrder(#ty (trexp left), #ty (trexp right), "arith", pos, "not an integer"); {exp=Tr.transBinOp(A.DivideOp, #exp (trexp left), #exp (trexp right)), ty=T.INT})
             | A.EqOp =>  (checkTyOrder(#ty (trexp left), #ty (trexp right), "eq", pos, "types mismatch"); {exp=(), ty=T.INT})
             | A.NeqOp => (checkTyOrder(#ty (trexp left), #ty (trexp right), "eq", pos, "types mismatch"); {exp=(), ty=T.INT})
             | A.LtOp => (checkTyOrder(#ty (trexp left), #ty (trexp right), "comp", pos, "not comparable"); {exp=(), ty=T.INT})
@@ -86,7 +86,7 @@ fun transExp(venv, tenv, exp, level, break) =
             | A.GeOp => (checkTyOrder(#ty (trexp left), #ty (trexp right), "comp", pos, "not comparable"); {exp=(), ty=T.INT})
           )
 
-        (* LetExp 🐶*) 
+        (* LetExp *) 
         | trexp(A.LetExp{decs, body, pos}) = 
             let 
               val {venv = venv', tenv = tenv'} = transDec(venv, tenv, decs)
@@ -94,13 +94,13 @@ fun transExp(venv, tenv, exp, level, break) =
               transExp(venv', tenv', body)
             end
 
-        (* BreakExp 🐶*) 
+        (* BreakExp *) 
         | trexp(A.BreakExp(pos)) = (
           if isInLoop() then () else Err.error pos "illegal break"; 
           {exp = (), ty = T.UNIT}
           ) 
 
-        (* WhileExp 🐶*) 
+        (* WhileExp *) 
         | trexp(A.WhileExp{test, body, pos}) = (
           checkTyOrder(#ty (trexp test), T.INT, "eq", pos, "not an integer");
           incLoopLevel(); 
@@ -109,7 +109,7 @@ fun transExp(venv, tenv, exp, level, break) =
           {exp = (), ty = T.UNIT}
           )
 
-        (* ForExp 🐶*) 
+        (* ForExp *) 
         | trexp(A.ForExp{var, escape, lo, hi, body, pos}) = (
           checkTyOrder(#ty (trexp lo), T.INT, "eq", pos, "not an integer");
           checkTyOrder(#ty (trexp hi), T.INT, "eq", pos, "not an integer");
@@ -119,7 +119,7 @@ fun transExp(venv, tenv, exp, level, break) =
           {exp = (), ty = T.UNIT}
           ) 
 
-        (* IfExp 🐶*) 
+        (* IfExp *) 
         | trexp(A.IfExp{test, then', else', pos}) = (
           checkTyOrder(#ty (trexp test), T.INT, "eq", pos, "not an integer");
           if isSome(else')
@@ -132,13 +132,13 @@ fun transExp(venv, tenv, exp, level, break) =
             {exp = (), ty = T.UNIT})
           )
 
-        (* AssignExp: TODO: implement for loop var unassignable*)  
+        (* AssignExp *)  
         | trexp(A.AssignExp{var, exp, pos}) = (
           checkTyOrder(actualTy(tenv, #ty (trvar(var))), #ty (trexp(exp)), "assign", pos, "error: var and exp types don't match");
           {exp = () , ty = T.UNIT} 
           )
 
-        (* CallExp 🐶*)
+        (* CallExp *)
         | trexp(A.CallExp{func, args, pos}) = 
         (* 1. S.look if function exists
         2. check if argument typing works out  *)
@@ -157,7 +157,7 @@ fun transExp(venv, tenv, exp, level, break) =
           end
           )
 
-        (* ArrayExp  TODO: super? *)
+        (* ArrayExp   *)
         | trexp(A.ArrayExp({typ, size, init, pos})) =
           (case S.look(tenv, typ) of
               SOME(x) =>
@@ -172,7 +172,7 @@ fun transExp(venv, tenv, exp, level, break) =
             | NONE => (Err.error pos "No such type"; {exp=(), ty=T.BOTTOM})
           )
           
-        (* RecordExp TODO: actual? *)
+        (* RecordExp  *)
         | trexp(A.RecordExp({fields, typ, pos})) = 
             (case S.look(tenv, typ) of
                   SOME x => 
@@ -199,7 +199,7 @@ fun transExp(venv, tenv, exp, level, break) =
                   | NONE => (Err.error pos ("error : invalid record type: " ^ S.name typ); {exp=(), ty=T.NIL})
                 )
 
-          (* SimpleVar  🐶*)
+          (* SimpleVar  *)
       and trvar(A.SimpleVar(sym, pos)) =
         (case S.look(venv, sym) of
               SOME(Env.VarEntry({ty})) => {exp=(), ty= ty} 
@@ -235,7 +235,7 @@ fun transExp(venv, tenv, exp, level, break) =
 
 and transDec(venv, tenv, decs, level, break) = 
         let 
-          (* VarDec 🐶 *)
+          (* VarDec  *)
           fun trdec(venv, tenv, A.VarDec({name, escape, typ, init, pos}), expList) =
               
                 let
@@ -286,8 +286,7 @@ and transDec(venv, tenv, decs, level, break) =
                 foldl checkIllegalCycle () tydeclist;
                 {tenv = tenvActualTy, venv = venv, expList = expList}
               end
-             (* FunctionDec  TODO: 1. use actualTy?? 2. should return type use
-             * sub or eq *)
+             (* FunctionDec  *)
           | trdec(venv, tenv, A.FunctionDec(fundeclist), expList) =
                 let 
                     fun transrt (rt, pos) =
