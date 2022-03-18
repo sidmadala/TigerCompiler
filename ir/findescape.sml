@@ -50,7 +50,7 @@ struct
               | trdec(A.TypeDec(tydeclist), env) = env
               | trdec(A.FunctionDec(fundeclist), env) = 
                 let
-                    fun addParamEnv({name, params, body, pos}, env) = S.enter(env, name, (d+1, escape))
+                    fun addParamEnv({name, escape, typ, pos}, env) = S.enter(env, name, (d+1, escape))
                     (*BUG: where should this 'escape' come from?*)
                     fun trfundec({name, params, result, body, pos}, env) = traverseExp((foldl addParamEnv env params), d + 1, body)
                 in
