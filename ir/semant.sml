@@ -79,58 +79,72 @@ fun transExp(venv, tenv, exp, level, break) =
             | A.MinusOp =>  (checkTyOrder(#ty (trexp left), #ty (trexp right), "arith", pos, "not an integer"); {exp=Tr.transBinOp(A.MinusOp, #exp (trexp left), #exp (trexp right)), ty=T.INT})
             | A.TimesOp =>  (checkTyOrder(#ty (trexp left), #ty (trexp right), "arith", pos, "not an integer"); {exp=Tr.transBinOp(A.TimesOp, #exp (trexp left), #exp (trexp right)), ty=T.INT})
             | A.DivideOp => (checkTyOrder(#ty (trexp left), #ty (trexp right), "arith", pos, "not an integer"); {exp=Tr.transBinOp(A.DivideOp, #exp (trexp left), #exp (trexp right)), ty=T.INT})
-            | A.EqOp =>  (checkTyOrder(#ty (trexp left), #ty (trexp right), "eq", pos, "types mismatch"); {exp=(), ty=T.INT})
-            | A.NeqOp => (checkTyOrder(#ty (trexp left), #ty (trexp right), "eq", pos, "types mismatch"); {exp=(), ty=T.INT})
-            | A.LtOp => (checkTyOrder(#ty (trexp left), #ty (trexp right), "comp", pos, "not comparable"); {exp=(), ty=T.INT})
-            | A.LeOp => (checkTyOrder(#ty (trexp left), #ty (trexp right), "comp", pos, "not comparable"); {exp=(), ty=T.INT})
-            | A.GtOp => (checkTyOrder(#ty (trexp left), #ty (trexp right), "comp", pos, "not comparable"); {exp=(), ty=T.INT})
-            | A.GeOp => (checkTyOrder(#ty (trexp left), #ty (trexp right), "comp", pos, "not comparable"); {exp=(), ty=T.INT})
+            | A.EqOp =>  (checkTyOrder(#ty (trexp left), #ty (trexp right), "eq", pos, "types mismatch"); {exp=Tr.transRelOp(A.EqOp, #exp (trexp left), #exp (trexp right), #ty (trexp left)), ty=T.INT})
+            | A.NeqOp => (checkTyOrder(#ty (trexp left), #ty (trexp right), "eq", pos, "types mismatch"); {exp=Tr.transRelOp(A.NeqOp, #exp (trexp left), #exp (trexp right), #ty (trexp left)), ty=T.INT})
+            | A.LtOp => (checkTyOrder(#ty (trexp left), #ty (trexp right), "comp", pos, "not comparable"); {exp=Tr.transRelOp(A.LtOp, #exp (trexp left), #exp (trexp right), #ty (trexp left)), ty=T.INT})
+            | A.LeOp => (checkTyOrder(#ty (trexp left), #ty (trexp right), "comp", pos, "not comparable"); {exp=Tr.transRelOp(A.LeOp, #exp (trexp left), #exp (trexp right), #ty (trexp left)), ty=T.INT})
+            | A.GtOp => (checkTyOrder(#ty (trexp left), #ty (trexp right), "comp", pos, "not comparable"); {exp=Tr.transRelOp(A.GtOp, #exp (trexp left), #exp (trexp right), #ty (trexp left)), ty=T.INT})
+            | A.GeOp => (checkTyOrder(#ty (trexp left), #ty (trexp right), "comp", pos, "not comparable"); {exp=Tr.transRelOp(A.GeOp, #exp (trexp left), #exp (trexp right), #ty (trexp left)), ty=T.INT})
           )
 
-        (* LetExp *) 
+        (* LetExp 🐶 *) 
         | trexp(A.LetExp{decs, body, pos}) = 
             let 
-              val {venv = venv', tenv = tenv'} = transDec(venv, tenv, decs)
+              val {venv = venv', tenv = tenv', expList = expList'} = transDec(venv, tenv, decs, level, break)
+              val bodyExp = transExp(venv', tenv', body, level, break)
             in
-              transExp(venv', tenv', body)
+              {exp = Tr.transLET(expList', #exp bodyExp), ty = #ty bodyExp}
             end
 
-        (* BreakExp *) 
+        (* BreakExp 🐶*) 
         | trexp(A.BreakExp(pos)) = (
           if isInLoop() then () else Err.error pos "illegal break"; 
-          {exp = (), ty = T.UNIT}
+          {exp = Tr.transBREAK(break), ty = T.UNIT}
           ) 
 
-        (* WhileExp *) 
+        (* WhileExp 🐶*) 
         | trexp(A.WhileExp{test, body, pos}) = (
           checkTyOrder(#ty (trexp test), T.INT, "eq", pos, "not an integer");
           incLoopLevel(); 
           checkTyOrder(#ty (trexp body), T.UNIT, "eq", pos, "while loop should return UNIT"); 
-          decLoopLevel(); 
-          {exp = (), ty = T.UNIT}
+          let
+            val breakLabel = Temp.newlabel()
+            val whileExp = {exp = Tr.transWHILE(#exp (transExp(venv, tenv, test, level, break)), #exp (transExp(venv, tenv, body, level, breakLabel)), breakLabel), ty = T.UNIT}
+          in
+            decLoopLevel(); 
+            whileExp
+          end
           )
 
-        (* ForExp *) 
+        (* ForExp 🐶*) 
         | trexp(A.ForExp{var, escape, lo, hi, body, pos}) = (
-          checkTyOrder(#ty (trexp lo), T.INT, "eq", pos, "not an integer");
-          checkTyOrder(#ty (trexp hi), T.INT, "eq", pos, "not an integer");
-          incLoopLevel(); 
-          checkTyOrder(#ty (transExp(S.enter(venv, var, E.VarEntry{ty=T.INT}), tenv, body)), T.UNIT, "eq", pos, "for loop should return UNIT"); 
+          let
+            val _ = checkTyOrder(#ty (trexp lo), T.INT, "eq", pos, "not an integer")
+            val _ = checkTyOrder(#ty (trexp hi), T.INT, "eq", pos, "not an integer")
+            val _ = incLoopLevel()
+            val breakLabel = Temp.newlabel()
+            val forExp = transExp(S.enter(venv, var, E.VarEntry{access = Tr.allocLocal level !escape, ty = T.INT}), tenv, body, level, breakLabel)
+          in
+            checkTyOrder(#ty forExp, T.UNIT, "eq", pos, "for loop should return UNIT");
+            decLoopLevel();
+            {exp = transFOR(#exp (trexp lo), #exp (trexp hi), #exp bodyExp, breakLabel), ty = T.UNIT}
+          end
+          (*checkTyOrder(#ty (transExp(S.enter(venv, var, E.VarEntry{ty=T.INT}), tenv, body)), T.UNIT, "eq", pos, "for loop should return UNIT"); 
           decLoopLevel(); 
-          {exp = (), ty = T.UNIT}
+          {exp = (), ty = T.UNIT}*)
           ) 
 
-        (* IfExp *) 
+        (* IfExp 🐶*) 
         | trexp(A.IfExp{test, then', else', pos}) = (
           checkTyOrder(#ty (trexp test), T.INT, "eq", pos, "not an integer");
           if isSome(else')
           then (
             checkTyOrder(#ty (trexp then'), #ty (trexp (valOf(else'))), "eq", pos, "then and else should return the same type");
-            {exp = (), ty = #ty (trexp then')}
+            {exp = Tr.transIF(#exp (trexp test), #exp (trexp then'), #exp (trexp else')), ty = #ty (trexp then')}
           )
           else (
             checkTyOrder(#ty (trexp then'), T.UNIT, "eq", pos, "then should return UNIT");
-            {exp = (), ty = T.UNIT})
+            {exp = Tr.transINT(0), ty = T.UNIT})
           )
 
         (* AssignExp 🐶*)  
@@ -139,7 +153,7 @@ fun transExp(venv, tenv, exp, level, break) =
           {exp = transAssign(#exp (trvar var), #exp (trexp exp)) , ty = T.UNIT} 
           )
 
-        (* CallExp *)
+        (* CallExp 🐶*)
         | trexp(A.CallExp{func, args, pos}) = 
         (* 1. S.look if function exists
         2. check if argument typing works out  *)
@@ -152,13 +166,13 @@ fun transExp(venv, tenv, exp, level, break) =
             | checkFunParams([], [], pos) = ()
           in 
             case S.look(venv, func) of
-              SOME(Env.FunEntry({formals, result})) => (checkFunParams(formals, args, pos); {exp=(), ty=result})
-              | SOME(_) => (Err.error pos "error: not a function"; {exp=(), ty=T.UNIT})
-              | NONE => (Err.error pos "error: function not declared"; {exp=(), ty=T.UNIT})
+              SOME(Env.FunEntry({level=cur, label, formals, result})) => (checkFunParams(formals, args, pos); {exp=Tr.transCall(cur, level, label, (foldl (fn(a, ans) => ans @ [#exp (trexp a)]) [] args)), ty=result})
+              | SOME(_) => (Err.error pos "error: not a function"; {exp=Tr.transINT(0), ty=T.UNIT})
+              | NONE => (Err.error pos "error: function not declared"; {exp=Tr.transINT(0), ty=T.UNIT})
           end
           )
 
-        (* ArrayExp   *)
+        (* ArrayExp  🐶 *)
         | trexp(A.ArrayExp({typ, size, init, pos})) =
           (case S.look(tenv, typ) of
               SOME(x) =>
@@ -166,14 +180,14 @@ fun transExp(venv, tenv, exp, level, break) =
                   T.ARRAY(ty, unique) => (
                     checkTyOrder(#ty (trexp size), T.INT, "eq", pos, "not an integer");
                     checkTyOrder(actualTy(tenv, ty), #ty (trexp init), "super", pos, "error: array type and initializing exp differ");
-                    {exp=(), ty=T.ARRAY(ty, unique)}
+                    {exp=transArray(#exp (trexp size), #exp (trexp init)), ty=T.ARRAY(ty, unique)}
                   )
-                  | _ => (Err.error pos "type not an array"; {exp=(), ty=T.BOTTOM})
+                  | _ => (Err.error pos "type not an array"; {exp=Tr.transINT(0), ty=T.BOTTOM})
                 )
-            | NONE => (Err.error pos "No such type"; {exp=(), ty=T.BOTTOM})
+            | NONE => (Err.error pos "No such type"; {exp=Tr.transINT(0), ty=T.BOTTOM})
           )
           
-        (* RecordExp  *)
+        (* RecordExp  🐶*)
         | trexp(A.RecordExp({fields, typ, pos})) = 
             (case S.look(tenv, typ) of
                   SOME x => 
@@ -191,23 +205,23 @@ fun transExp(venv, tenv, exp, level, break) =
                                         exp))))))
                                 in
                                     if List.length(f(tenv)) <> List.length(fields)
-                                    then (Err.error pos ("record list is wrong length: " ^ S.name typ); {exp=(), ty= T.NIL})
+                                    then (Err.error pos ("record list is wrong length: " ^ S.name typ); {exp=Tr.transNIL(0), ty= T.NIL})
                                     else (foldl check () (ListPair.zip(fields,
-                                    f(tenv))); {exp=(), ty= actualTy(tenv, x)})
+                                    f(tenv))); {exp=Tr.transRecord(map #exp (map trexp (map #2 fields))), ty= actualTy(tenv, x)})
                                 end
-                          | _ => (Err.error pos ("error : expected record type, not: " ^ S.name typ); {exp=(), ty=T.NIL})
+                          | _ => (Err.error pos ("error : expected record type, not: " ^ S.name typ); {exp=Tr.transNIL(0), ty=T.NIL})
                         )
-                  | NONE => (Err.error pos ("error : invalid record type: " ^ S.name typ); {exp=(), ty=T.NIL})
+                  | NONE => (Err.error pos ("error : invalid record type: " ^ S.name typ); {exp=Tr.transNIL(0), ty=T.NIL})
                 )
 
-          (* SimpleVar  *)
+          (* SimpleVar  🐶*)
       and trvar(A.SimpleVar(sym, pos)) =
         (case S.look(venv, sym) of
-              SOME(Env.VarEntry({ty})) => {exp=(), ty= ty} 
-            | SOME(Env.FunEntry({formals, result})) => {exp=(), ty= result} 
-            | NONE => (Err.error pos ("error: variable not declared " ^ S.name sym); {exp=(), ty= T.BOTTOM})
+              SOME(Env.VarEntry({access, ty})) => {exp=transSimpleVar(access, level), ty= ty} 
+            | SOME(Env.FunEntry(_) => (Err.error pos ("error: variable is a function " ^ S.name sym); {exp=Tr.transINT(0), ty= T.BOTTOM})
+            | NONE => (Err.error pos ("error: variable not declared " ^ S.name sym); {exp=Tr.transINT(0), ty= T.BOTTOM})
         )
-          (* FieldVar *)
+          (* FieldVar 🐶*)
         | trvar(A.FieldVar(var, sym, pos)) = 
             (case actualTy(tenv, #ty(trvar var)) of 
                 T.RECORD(fieldTys, unique) =>
@@ -218,17 +232,19 @@ fun transExp(venv, tenv, exp, level, break) =
                             then actualTy(tenv, fieldTy) 
                             else getFieldType(l, id, pos)
                         | getFieldType([], id, pos) = (Err.error pos ("error: field does not exist in record"); T.BOTTOM)
+                      fun find([], target, idx) = idx
+                        | find(a::l, target, idx) = if a = target then idx else find(l, target, idx + 1)
                     in
-                      {exp=(), ty=getFieldType(fields, sym, pos)}
+                      {exp=Tr.transFieldVar(#exp (trvar var), find(map #1 fields, sym, 0)), ty=getFieldType(fields, sym, pos)}
                     end
-                | _ => (Err.error pos ("error: not a record"); {exp=(), ty=T.BOTTOM})
+                | _ => (Err.error pos ("error: not a record"); {exp=Tr.transINT(0), ty=T.BOTTOM})
             )
-            (* SubscriptVar *)
+            (* SubscriptVar 🐶*)
         | trvar(A.SubscriptVar(var, exp, pos)) =
               (case actualTy(tenv, #ty (trvar var)) of
                 T.ARRAY(arrTy, unique) => (checkTyOrder(#ty (trexp
-                exp), T.INT, "eq", pos, "not an integer"); {exp=(), ty=actualTy(tenv, arrTy)})
-                | _ => (Err.error pos ("error: not an array"); {exp=(), ty=T.BOTTOM})  
+                exp), T.INT, "eq", pos, "not an integer"); {exp=Tr.transSubscriptVar(#exp (trvar var), #exp (trexp exp)), ty=actualTy(tenv, arrTy)})
+                | _ => (Err.error pos ("error: not an array"); {exp=Tr.transINT(0), ty=T.BOTTOM})  
               )    
     in
       trexp(exp)
@@ -238,18 +254,17 @@ and transDec(venv, tenv, decs, level, break) =
         let 
           (* VarDec  *)
           fun trdec(venv, tenv, A.VarDec({name, escape, typ, init, pos}), expList) =
-              
-                let
+              let
                 val initTy = #ty (transExp(venv, tenv, init, level, break));
                 val access' = Tr.allocLocal level (!escape)
                 fun appendExpList() =
                       let
-                        val left = Tr.simpleVarIR(access', level)
+                        val left = Tr.transSimpleVar(access', level)
                         val right = #exp (transExp(venv, tenv, init, level, break))
                       in
-                        expList @ [Tr.assignIR(left, right)]
+                        expList @ [Tr.transAssign(left, right)]
                       end
-                in
+              in
                 case typ of
                     SOME(symbol, pos) =>
                         (case S.look(tenv, symbol) of
@@ -262,7 +277,7 @@ and transDec(venv, tenv, decs, level, break) =
                         {venv=S.enter(venv, name, (Env.VarEntry{access = access', ty = initTy})),
                         tenv = tenv, expList = appendExpList()})
                         
-                end
+              end
                 
           (* TypeDec  TODO: should we break the cycle here or add extra stuff in actualTy to avoid inifite loop?*)
           | trdec(venv, tenv, A.TypeDec(tydeclist), expList) =
@@ -303,15 +318,13 @@ and transDec(venv, tenv, decs, level, break) =
                     fun enterFuncs (func, venv) = 
                         let
                           val newlabel = Temp.newlabel()
-                          fun getEscape {name=name', escape=escape', typ=typ', pos=pos'} = !escape'
-                          fun genEscapeList params' = map getEscape params'
                         in
                           case func of 
                               {name, params, body, pos, result=SOME(rt, pos')} =>
-                                    S.enter(venv, name, Env.FunEntry{level=Translate.newLevel {parent=level, name=newlabel, formals=genEscapeList params},
-                                                                     label=newlabel, formals= map #ty (map transparam params), result=transrt rt})
+                                    S.enter(venv, name, Env.FunEntry{level=Tr.newLevel {parent=level, name=newlabel, formals=(map ! (map #escape params))},
+                                                                     label=newlabel, formals= map #ty (map transparam params), result=transrt(rt, pos)})
                             | {name, params, body, pos, result=NONE} =>
-                                    S.enter(venv, name, Env.FunEntry{level=Translate.newLevel {parent=level, name=newlabel, formals=genEscapeList params},
+                                    S.enter(venv, name, Env.FunEntry{level=Tr.newLevel {parent=level, name=newlabel, formals=(map ! (map #escape params))},
                                                                      label=newlabel, formals= map #ty (map transparam params), result=T.UNIT})
                         end
                     (*fun enterFuncs ({name, params, body, pos, result=SOME(rt, pos')}, venv) = 
@@ -416,7 +429,7 @@ fun transProg(exp_to_translate : A.exp) =
       val _ = FindEscape.findEscape(exp_to_translate)
       val transResult = #exp (transExp(E.base_venv, E.base_tenv, exp_to_translate, mainLevel, main))
     in 
-      Tr.procEntryExit {level = mainLevel, body = transResult}
+      Tr.procEntryExit {level = mainLevel, body = transResult};
       Tr.getResult()
     end
 end 
