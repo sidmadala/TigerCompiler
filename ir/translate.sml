@@ -249,18 +249,23 @@ struct
                 |_ => ErrorMsg.impossible "something wrong with findStringFrag"
         end
 
-    (*RECORDS - pg 164*)
-    fun transRecord(fields) = ()
-        (* let 
+    (*RECORDS - pg 164 (@zian pass in list of expressions)*)
+    fun transRecord(fieldExps) = 
+        let 
             val r = Temp.newtemp()
-            val flen = List.length fields
+            val flen = List.length fieldExps
             val recordInit = T.MOVE(T.TEMP r, F.externalCall("initRecord", [T.CONST flen]))
-            fun initField(exp, index) = T.MOVE(T.MEM(T.BINOP(T.PLUS, T.TEMP r, T.CONST(F.wordSize*index)), unEx exp))
-            fun joinInits([]) = [recordInit]
-                |joinInits(a::inits) = initField(exp, flen) :: joinInits(inits)
-        in
-            Ex(T.ESEQ((),T.TEMP r))
-        end *)
+            fun initField(exp, index) = T.MOVE(T.MEM(T.BINOP(T.PLUS, T.TEMP r, T.CONST(F.wordSize*index))), unEx exp)
+            fun genSTMS(currField, (prev, index)) =
+                let 
+                    val currFieldSTM = initField(currField, index)
+                in
+                    (currFieldSTM :: prev, index + 1)
+                end  
+            val (stms, index) = foldl genSTMS ([recordInit], 0) fieldExps
+       in
+            Ex(T.ESEQ(T.SEQ stms, T.TEMP r))
+        end
 
     (*VARIABLES*)
     fun transSimpleVar() = () 
