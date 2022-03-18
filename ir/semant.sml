@@ -66,10 +66,11 @@ fun transExp(venv, tenv, exp, level, break) =
         | trexp(A.StringExp(s, pos)) = {exp = Tr.transSTRING(s), ty = T.STRING}
         | trexp(A.VarExp(var)) = trvar(var)
 
-        (* SeqExp *)  
-        | trexp(A.SeqExp([])) = {exp = (), ty = Types.UNIT}
+        (* SeqExp 🐶*)  
+        | trexp(A.SeqExp(seq)) = {exp = transSEQEXP(seq), ty = T.UNIT}
+        (*| trexp(A.SeqExp([])) = {exp = (), ty = Types.UNIT}
         | trexp(A.SeqExp([(exp, pos)])) = trexp(exp)
-        | trexp(A.SeqExp((exp, pos)::l)) = (trexp(exp); trexp(A.SeqExp l))
+        | trexp(A.SeqExp((exp, pos)::l)) = (trexp(exp); trexp(A.SeqExp l))*)
 
         (* OpExp: check for type equality *)
         | trexp(A.OpExp{left, oper, right, pos}) = 
@@ -132,10 +133,10 @@ fun transExp(venv, tenv, exp, level, break) =
             {exp = (), ty = T.UNIT})
           )
 
-        (* AssignExp *)  
+        (* AssignExp 🐶*)  
         | trexp(A.AssignExp{var, exp, pos}) = (
           checkTyOrder(actualTy(tenv, #ty (trvar(var))), #ty (trexp(exp)), "assign", pos, "error: var and exp types don't match");
-          {exp = () , ty = T.UNIT} 
+          {exp = transAssign(#exp (trvar var), #exp (trexp exp)) , ty = T.UNIT} 
           )
 
         (* CallExp *)
