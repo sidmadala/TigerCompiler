@@ -148,18 +148,38 @@ struct
         end
 
     (*BINOPS*)
-    fun transBinOp(op, left, right) = 
+    fun transBinOp(oper, left, right) = 
         let
             val left' = unEx left
             val right' = unEx right
             val op' =
-                case op of 
+                (case oper of 
                     Absyn.PlusOp => T.PLUS
                    |Absyn.MinusOp => T.MINUS
                    |Absyn.TimesOp => T.MUL
-                   |Absyn.DivideOp => T.DIV   
+                   |Absyn.DivideOp => T.DIV
+                   |_ => ErrorMsg.impossible "we're using transBinOp wrong")  
         in
             Ex(T.BINOP(op', left', right'))
+        end
+    
+    (*CALL*)
+    fun transCall(_, TOP, funLabel, args) = 
+        let
+            val argsEx = map unEx args
+        in
+            Ex(T.CALL(T.NAME funLabel, argsEx))
+        end
+
+        |transCall(callLevel, fnLevel, funLabel, args) = 
+        let
+            val staticLink = ()
+            (*TODO: STATIC LINK STUFF*)
+            val argsEx = map unEx args
+        in
+            (*this is correct, but sl not done yet so compiler will throw errors*)
+            (* Ex(T.CALL(T.NAME funLabel, staticLink::argsEx)) *)
+            Ex(T.CALL(T.NAME funLabel, argsEx))
         end
 
     (*RELOPS -> do when you understand how strings work*)
@@ -167,8 +187,8 @@ struct
     (*DATA STUCTURES*)
     fun transNIL(_) = Ex(T.CONST 0)
     fun transINT(n) = Ex(T.CONST n)
-    (* fun transString() = ()
+    fun transArray(size, init) = Ex(T.CALL(T.NAME(Temp.namedlabel "initArray"), [unEx size, unEx init]))
+    fun transString() = ()
     fun transRecord() = ()
-    fun transArray() = () *)
 
 end

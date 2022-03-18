@@ -15,11 +15,11 @@ Frame Analysis:
 - [x]  mipsframe.sml
 - [x]  findescape.sml
 - [x]  translate.sml
-- [ ]  semant.sml
+- [x]  semant.sml
 
 NOTE - I changed Tr.SEQ -> stm * stm to Tr.SEQ -> stm list 
 IR:
-- [ ] translate.sml
+- translate.sml
 
     vars:
     - [ ] simple
@@ -39,7 +39,7 @@ IR:
     - [x] forexp
     - [x] breakexp
     - [ ] letexp
-    - [ ] arrayexp
+    - [x] arrayexp
     - [ ] recordexp
 
     decs:
