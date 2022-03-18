@@ -12,6 +12,11 @@ struct
                    | NESTED of {parent: level, frame: F.frame, unique: unit ref}
 
     type access = level * F.access (* not the same as Frame.access *)
+    
+    (*FRAGMENT STUFF pg 169-170*)
+    type frag = F.frag
+    val fraglist : frag list ref = ref []
+    fun getResult() = !fraglist
 
     val outermost = TOP
 
@@ -163,6 +168,27 @@ struct
             Ex(T.BINOP(op', left', right'))
         end
     
+    (*RELOP -> must be different to binop because string comparisons are external*)
+    fun transRelOp(oper, left, right, typ) =
+        let
+            val left' = unEx left
+            val right' = unEx right
+            val oper' = case oper of
+                 Absyn.EqOp => T.EQ
+                |Absyn.NeqOp => T.NE
+                |Absyn.LtOp => T.LT
+                |Absyn.GtOp => T.GT
+                |Absyn.LeOp => T.LE
+                |Absyn.GeOp => T.GE
+        in
+            case (oper', typ) of
+                 (T.EQ, Types.STRING) => Ex(F.externalCall("strEq", [left', right']))
+                |(T.NE, Types.STRING) => Ex(F.externalCall("strNeq", [left', right']))
+                |(T.LT, Types.STRING) => Ex(F.externalCall("strLt", [left', right']))
+                |(T.GT, Types.STRING) => Ex(F.externalCall("strGt", [left', right']))
+                |_ => Cx(fn (t, f) => T.CJUMP(oper', left', right', t, f))
+        end 
+
     (*CALL*)
     fun transCall(_, TOP, funLabel, args) = 
         let
@@ -202,12 +228,32 @@ struct
     (*DATA STUCTURES*)
     fun transNIL() = Ex(T.CONST 0)
     fun transINT(n) = Ex(T.CONST n)
-    fun transArray(size, init) = Ex(T.CALL(T.NAME(Temp.namedlabel "initArray"), [unEx size, unEx init]))
-    fun transString() = ()
+
+    (*ARRAY*)
+    fun transArray(size, init) = Ex(F.externalCall("initArray", [unEx size, unEx init]))
+
+    (*STRING*)
+    fun transString(string) = 
+        let
+            fun findStringFrag(F.PROC(_)) = false
+                |findStringFrag(F.STRING(label, string')) = (String.compare(string, string') = EQUAL) 
+            val foundFrag = List.find findStringFrag (!fraglist)
+        in
+            case foundFrag of 
+                SOME(F.STRING(lab, str)) => Ex(T.NAME lab)
+                |NONE =>
+                    let
+                    val newLabel = Temp.newlabel()
+                    in
+                    fraglist := (F.STRING(newLabel, string)::(!fraglist));
+                    Ex(T.NAME newLabel)
+                    end
+                |_ => ErrorMsg.impossible "something wrong with findStringFrag"
+        end
+
     fun transRecord() = ()
 
-    (*also have to do vars + deal with vardec here*)
-    fun transVarDec(level, varLabel) = ()
+    (*VARIABLES*)
     fun transSimpleVar() = () 
     fun transFieldVar() = ()
     fun transSubscriptVar() = ()

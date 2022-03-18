@@ -1,6 +1,6 @@
 structure MipsFrame : FRAME = 
 struct 
-
+    structure T = Tree
     (* Defined by MIPS ISA *)
     val wordSize = 4
     val argRegs = 4
@@ -49,5 +49,5 @@ struct
               | false => (InReg(Temp.newtemp()))
         end
 
-
+        fun externalCall(s,args) = T.CALL(T.NAME(Temp.namedlabel s), args)
 end
