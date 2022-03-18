@@ -257,25 +257,18 @@ and transDec(venv, tenv, decs, level, break) =
               let
                 val initTy = #ty (transExp(venv, tenv, init, level, break));
                 val access' = Tr.allocLocal level (!escape)
-                fun appendExpList() =
-                      let
-                        val left = Tr.transSimpleVar(access', level)
-                        val right = #exp (transExp(venv, tenv, init, level, break))
-                      in
-                        expList @ [Tr.transAssign(left, right)]
-                      end
               in
                 case typ of
                     SOME(symbol, pos) =>
                         (case S.look(tenv, symbol) of
                             SOME ty => (checkTyOrder(actualTy(tenv, ty), initTy, "super", pos, "types mismatch");
-                                       {venv=S.enter(venv, name, (Env.VarEntry{access = access', ty = actualTy(tenv, ty)})), tenv = tenv, expList = appendExpList()})
-                          | NONE => (Err.error pos "type not recognized"; {venv = venv, tenv = tenv, expList = appendExpList()})
+                                       {venv=S.enter(venv, name, (Env.VarEntry{access = access', ty = actualTy(tenv, ty)})), tenv = tenv, expList = expList @ Tr.transAssign(Tr.transSimpleVar(access', level), #exp (transExp(venv, tenv, init, level, break)))})
+                          | NONE => (Err.error pos "type not recognized"; {venv = venv, tenv = tenv, expList = expList @ Tr.transAssign(Tr.transSimpleVar(access', level), #exp (transExp(venv, tenv, init, level, break)))})
                         )
                   | NONE =>
                         (if String.compare(tyToString(initTy), "NIL") = EQUAL then Err.error pos "error: initializing nil expressions not constrained by record type" else ();
                         {venv=S.enter(venv, name, (Env.VarEntry{access = access', ty = initTy})),
-                        tenv = tenv, expList = appendExpList()})
+                        tenv = tenv, expList = expList @ Tr.transAssign(Tr.transSimpleVar(access', level), #exp (transExp(venv, tenv, init, level, break)))})
                         
               end
                 
