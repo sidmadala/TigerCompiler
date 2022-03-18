@@ -263,7 +263,26 @@ struct
         end *)
 
     (*VARIABLES*)
-    fun transSimpleVar() = () 
-    fun transFieldVar() = ()
+    fun transSimpleVar((_, frameAccess), TOP) = (ErrorMsg.error ~1 "Variable called in outermost level"; Ex(T.CONST 0))
+      | transSimpleVar((TOP, frameAccess), _) = (ErrorMsg.error ~1 "Variable declared in outermost level"; Ex(T.CONST 0))
+      | transSimpleVar(frameAccess, levelFrame) = 
+        let
+            (* FIX: Match and binding are nonexhaustive *)
+            val (NESTED{parent=parent, frame=frame, unique=testRef}, testAccess) = frameAccess
+            fun followLink (NESTED{parent=parent', frame=frame', unique=currentRef}, currentAcc) =
+                if testRef = currentRef then F.checkOffset(testAccess)(currentAcc)
+                else
+                    let 
+                        val nextLink = hd (F.formals frame')
+                    in
+                        followLink (parent', F.checkOffset(nextLink)(currentAcc))
+                    end
+        in
+            Ex(followLink(levelFrame, T.TEMP(F.FP)))
+        end
+
+    fun transFieldVar(varEx, index) = Ex(T.MEM(T.BINOP(T.PLUS, unEx varEx, T.CONST(index * F.wordSize))))
+
+
     fun transSubscriptVar() = ()
 end
