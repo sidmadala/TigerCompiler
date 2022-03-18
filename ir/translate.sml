@@ -250,12 +250,17 @@ struct
         end
 
     (*RECORDS - pg 164*)
-    fun transRecord(fields) =
-        let 
+    fun transRecord(fields) = ()
+        (* let 
             val r = Temp.newtemp()
+            val flen = List.length fields
+            val recordInit = T.MOVE(T.TEMP r, F.externalCall("initRecord", [T.CONST flen]))
+            fun initField(exp, index) = T.MOVE(T.MEM(T.BINOP(T.PLUS, T.TEMP r, T.CONST(F.wordSize*index)), unEx exp))
+            fun joinInits([]) = [recordInit]
+                |joinInits(a::inits) = initField(exp, flen) :: joinInits(inits)
         in
-            Ex(T.MOVE((),T.TEMP r))
-        end
+            Ex(T.ESEQ((),T.TEMP r))
+        end *)
 
     (*VARIABLES*)
     fun transSimpleVar() = () 
