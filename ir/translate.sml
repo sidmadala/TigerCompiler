@@ -17,6 +17,7 @@ struct
     type frag = F.frag
     val fraglist : frag list ref = ref []
     fun getResult() = !fraglist
+    fun resetFragList() = fraglist := []
 
     val outermost = TOP
 
@@ -305,5 +306,14 @@ struct
                T.MOVE(T.TEMP(addr),
                        T.BINOP(T.PLUS, arr, T.BINOP(T.MUL, index, T.CONST(F.wordSize)))),
                T.MEM(T.TEMP(addr))))
+        end
+
+    fun procEntryExit ({level = TOP, body}) = (ErrorMsg.error ~1 "function is declared in outermost level"; ())
+      | procEntryExit ({level = NESTED{parent, frame, unique}, body}) =
+        let 
+            val body' = unEx body
+            val body'' = F.PROC{body = T.MOVE(T.TEMP F.RV, body'), frame = frame}
+        in 
+            fraglist := !fraglist @ [body'']  (* What is the order here? *)
         end
 end

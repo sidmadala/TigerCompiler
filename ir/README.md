@@ -22,7 +22,7 @@ IR:
     - [x] intexp
     - [x] stringexp 
     - [x] opexp
-    - [ ] callexp
+    - [x] callexp
     - [x] seqexp
     - [x] assignexp
     - [x] ifexp
