@@ -13,16 +13,16 @@ IR:
 - translate.sml
 
     vars:
-    - [ ] simple
-    - [ ] field
-    - [ ] subscript
+    - [x] simple
+    - [x] field
+    - [x] subscript
 
     exps:
     - [x] nilexp
     - [x] intexp
     - [x] stringexp 
     - [x] opexp
-    - [ ] callexp
+    - [x] callexp
     - [x] seqexp
     - [x] assignexp
     - [x] ifexp

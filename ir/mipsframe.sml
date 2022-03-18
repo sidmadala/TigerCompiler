@@ -53,5 +53,5 @@ struct
               | false => (InReg(Temp.newtemp()))
         end
 
-        fun externalCall(s,args) = T.CALL(T.NAME(Temp.namedlabel s), args)
+    fun externalCall(s,args) = T.CALL(T.NAME(Temp.namedlabel s), args)
 end
