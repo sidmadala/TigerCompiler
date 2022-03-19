@@ -212,7 +212,6 @@ struct
             val staticLink = findFrame(parent, callLevel)
             val argsEx = map unEx args
         in
-            (*this is correct, but sl not done yet so compiler will throw errors*)
             Ex(T.CALL(T.NAME funLabel, staticLink::argsEx))
         end
 
