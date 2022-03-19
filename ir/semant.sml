@@ -67,7 +67,7 @@ fun transExp(venv, tenv, exp, level, break) =
         | trexp(A.VarExp(var)) = trvar(var)
 
         (* SeqExp 🐶*)  
-        | trexp(A.SeqExp(seq)) = {exp = transSEQEXP(seq), ty = T.UNIT}
+        | trexp(A.SeqExp(seq)) = {exp = Tr.transSEQEXP(seq), ty = T.UNIT}
         (*| trexp(A.SeqExp([])) = {exp = (), ty = Types.UNIT}
         | trexp(A.SeqExp([(exp, pos)])) = trexp(exp)
         | trexp(A.SeqExp((exp, pos)::l)) = (trexp(exp); trexp(A.SeqExp l))*)
@@ -123,11 +123,11 @@ fun transExp(venv, tenv, exp, level, break) =
             val _ = checkTyOrder(#ty (trexp hi), T.INT, "eq", pos, "not an integer")
             val _ = incLoopLevel()
             val breakLabel = Temp.newlabel()
-            val forExp = transExp(S.enter(venv, var, E.VarEntry{access = Tr.allocLocal level !escape, ty = T.INT}), tenv, body, level, breakLabel)
+            val forExp = transExp(S.enter(venv, var, E.VarEntry{access = Tr.allocLocal level (!escape), ty = T.INT}), tenv, body, level, breakLabel)
           in
             checkTyOrder(#ty forExp, T.UNIT, "eq", pos, "for loop should return UNIT");
             decLoopLevel();
-            {exp = Tr.transFOR(#exp (trexp lo), #exp (trexp hi), #exp bodyExp, breakLabel), ty = T.UNIT}
+            {exp = Tr.transFOR(#exp (trexp lo), #exp (trexp hi), #exp forExp, breakLabel), ty = T.UNIT}
           end
           (*checkTyOrder(#ty (transExp(S.enter(venv, var, E.VarEntry{ty=T.INT}), tenv, body)), T.UNIT, "eq", pos, "for loop should return UNIT"); 
           decLoopLevel(); 
