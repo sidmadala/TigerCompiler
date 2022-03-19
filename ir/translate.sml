@@ -23,7 +23,7 @@ struct
 
     (*newLevel called by transDec in Semant to create a new nesting level for each function*)
     (*this function in turn calls Frame.newFrame to make a new frame*)
-    fun newLevel({parent, name, formals}) = NESTED{parent = parent, frame = F.newFrame{name=name, formals=formals}, unique = ref ()}
+    fun newLevel({parent, name, formals}) = NESTED{parent = parent, frame = F.newFrame{name=name, formals=true::formals}, unique = ref ()}
 
     (*Returns nothing if TOP level, get formals converted into accesses if NESTED*)
     fun formals(TOP) = []
