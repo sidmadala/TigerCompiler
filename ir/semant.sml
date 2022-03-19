@@ -140,7 +140,7 @@ fun transExp(venv, tenv, exp, level, break) =
           if isSome(else')
           then (
             checkTyOrder(#ty (trexp then'), #ty (trexp (valOf(else'))), "eq", pos, "then and else should return the same type");
-            {exp = Tr.transIF(#exp (trexp test), #exp (trexp then'), #exp (trexp valOf(else'))), ty = #ty (trexp then')}
+            {exp = Tr.transIF(#exp (trexp test), #exp (trexp then'), #exp (trexp(valOf(else')))), ty = #ty (trexp then')}
           )
           else (
             checkTyOrder(#ty (trexp then'), T.UNIT, "eq", pos, "then should return UNIT");
