@@ -31,6 +31,9 @@ val transString : string -> exp
 val transSimpleVar : access * level -> exp
 val transFieldVar : exp * int -> exp
 val transSubscriptVar : exp * exp -> exp
+val transLET : (exp list * exp) -> exp
+val transCall : level * level * Temp.label * exp list -> exp
+val resetFragList :  unit -> unit
 
 val procEntryExit : {level: level, body: exp} -> unit
 val getResult : unit -> F.frag list
