@@ -63,11 +63,12 @@ fun transExp(venv, tenv, exp, level, break) =
     let
       fun trexp(A.NilExp) = {exp = Tr.transNIL(), ty = T.NIL}
         | trexp(A.IntExp(i)) = {exp = Tr.transINT(i), ty = T.INT}
-        | trexp(A.StringExp(s, pos)) = {exp = Tr.transSTRING(s), ty = T.STRING}
+        | trexp(A.StringExp(s, pos)) = {exp = Tr.transString(s), ty = T.STRING}
         | trexp(A.VarExp(var)) = trvar(var)
 
         (* SeqExp 🐶*)  
-        | trexp(A.SeqExp(seq)) = {exp = Tr.transSEQEXP(seq), ty = T.UNIT}
+        | trexp(A.SeqExp(seq)) = {exp = Tr.transSEQEXP(foldl (fn(a, ans)=>ans @
+        [#exp (trexp(#1 a))]) [] seq), ty = T.UNIT}
         (*| trexp(A.SeqExp([])) = {exp = (), ty = Types.UNIT}
         | trexp(A.SeqExp([(exp, pos)])) = trexp(exp)
         | trexp(A.SeqExp((exp, pos)::l)) = (trexp(exp); trexp(A.SeqExp l))*)
@@ -150,7 +151,7 @@ fun transExp(venv, tenv, exp, level, break) =
         (* AssignExp 🐶*)  
         | trexp(A.AssignExp{var, exp, pos}) = (
           checkTyOrder(actualTy(tenv, #ty (trvar(var))), #ty (trexp(exp)), "assign", pos, "error: var and exp types don't match");
-          {exp = transAssign(#exp (trvar var), #exp (trexp exp)) , ty = T.UNIT} 
+          {exp = Tr.transAssign(#exp (trvar var), #exp (trexp exp)) , ty = T.UNIT} 
           )
 
         (* CallExp 🐶*)
@@ -262,13 +263,24 @@ and transDec(venv, tenv, decs, level, break) =
                     SOME(symbol, pos) =>
                         (case S.look(tenv, symbol) of
                             SOME ty => (checkTyOrder(actualTy(tenv, ty), initTy, "super", pos, "types mismatch");
-                                       {venv=S.enter(venv, name, (Env.VarEntry{access = access', ty = actualTy(tenv, ty)})), tenv = tenv, expList = expList @ Tr.transAssign(Tr.transSimpleVar(access', level), #exp (transExp(venv, tenv, init, level, break)))})
-                          | NONE => (Err.error pos "type not recognized"; {venv = venv, tenv = tenv, expList = expList @ Tr.transAssign(Tr.transSimpleVar(access', level), #exp (transExp(venv, tenv, init, level, break)))})
+                                       {venv=S.enter(venv, name,
+                                       (Env.VarEntry{access = access', ty =
+                                       actualTy(tenv, ty)})), tenv = tenv,
+                                       expList = expList @
+                                       [Tr.transAssign(Tr.transSimpleVar(access',
+                                       level), #exp (transExp(venv, tenv, init,
+                                       level, break)))]})
+                          | NONE => (Err.error pos "type not recognized"; {venv
+                          = venv, tenv = tenv, expList = expList @
+                          [Tr.transAssign(Tr.transSimpleVar(access', level),
+                          #exp (transExp(venv, tenv, init, level, break)))]})
                         )
                   | NONE =>
                         (if String.compare(tyToString(initTy), "NIL") = EQUAL then Err.error pos "error: initializing nil expressions not constrained by record type" else ();
                         {venv=S.enter(venv, name, (Env.VarEntry{access = access', ty = initTy})),
-                        tenv = tenv, expList = expList @ (Tr.transAssign(Tr.transSimpleVar(access', level), #exp (transExp(venv, tenv, init, level, break))))})
+                        tenv = tenv, expList = expList @
+                        [Tr.transAssign(Tr.transSimpleVar(access', level), #exp
+                        (transExp(venv, tenv, init, level, break)))]})
                         
               end
                 
@@ -418,7 +430,7 @@ and transTy(tenv, ty) =
 fun transProg(exp_to_translate : A.exp) = 
     let
       val _ = Tr.resetFragList()
-      val main = Tr.newlabel()
+      val main = Temp.newlabel()
       val mainLevel = Tr.newLevel({parent = Tr.outermost, name = main, formals = []})
       val _ = FindEscape.findEscape(exp_to_translate)
       val transResult = #exp (transExp(E.base_venv, E.base_tenv, exp_to_translate, mainLevel, main))
