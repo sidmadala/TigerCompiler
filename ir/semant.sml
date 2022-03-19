@@ -9,7 +9,7 @@ struct
 type venv = E.enventry S.table
 type tenv = T.ty S.table
 
-type expty = {exp: Translate.exp, ty: T.ty}
+type expty = {exp: Tr.exp, ty: T.ty}
 
 val loopLevel = ref 0
 fun isInLoop() = !loopLevel > 0
@@ -127,7 +127,7 @@ fun transExp(venv, tenv, exp, level, break) =
           in
             checkTyOrder(#ty forExp, T.UNIT, "eq", pos, "for loop should return UNIT");
             decLoopLevel();
-            {exp = transFOR(#exp (trexp lo), #exp (trexp hi), #exp bodyExp, breakLabel), ty = T.UNIT}
+            {exp = Tr.transFOR(#exp (trexp lo), #exp (trexp hi), #exp bodyExp, breakLabel), ty = T.UNIT}
           end
           (*checkTyOrder(#ty (transExp(S.enter(venv, var, E.VarEntry{ty=T.INT}), tenv, body)), T.UNIT, "eq", pos, "for loop should return UNIT"); 
           decLoopLevel(); 
@@ -180,7 +180,7 @@ fun transExp(venv, tenv, exp, level, break) =
                   T.ARRAY(ty, unique) => (
                     checkTyOrder(#ty (trexp size), T.INT, "eq", pos, "not an integer");
                     checkTyOrder(actualTy(tenv, ty), #ty (trexp init), "super", pos, "error: array type and initializing exp differ");
-                    {exp=transArray(#exp (trexp size), #exp (trexp init)), ty=T.ARRAY(ty, unique)}
+                    {exp=Tr.transArray(#exp (trexp size), #exp (trexp init)), ty=T.ARRAY(ty, unique)}
                   )
                   | _ => (Err.error pos "type not an array"; {exp=Tr.transINT(0), ty=T.BOTTOM})
                 )
@@ -268,7 +268,7 @@ and transDec(venv, tenv, decs, level, break) =
                   | NONE =>
                         (if String.compare(tyToString(initTy), "NIL") = EQUAL then Err.error pos "error: initializing nil expressions not constrained by record type" else ();
                         {venv=S.enter(venv, name, (Env.VarEntry{access = access', ty = initTy})),
-                        tenv = tenv, expList = expList @ Tr.transAssign(Tr.transSimpleVar(access', level), #exp (transExp(venv, tenv, init, level, break)))})
+                        tenv = tenv, expList = expList @ (Tr.transAssign(Tr.transSimpleVar(access', level), #exp (transExp(venv, tenv, init, level, break))))})
                         
               end
                 
