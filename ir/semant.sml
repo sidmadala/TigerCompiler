@@ -140,7 +140,7 @@ fun transExp(venv, tenv, exp, level, break) =
           if isSome(else')
           then (
             checkTyOrder(#ty (trexp then'), #ty (trexp (valOf(else'))), "eq", pos, "then and else should return the same type");
-            {exp = Tr.transIF(#exp (trexp test), #exp (trexp then'), #exp (trexp else')), ty = #ty (trexp then')}
+            {exp = Tr.transIF(#exp (trexp test), #exp (trexp then'), #exp (trexp valOf(else'))), ty = #ty (trexp then')}
           )
           else (
             checkTyOrder(#ty (trexp then'), T.UNIT, "eq", pos, "then should return UNIT");
@@ -340,7 +340,7 @@ and transDec(venv, tenv, decs, level, break) =
                                 )
                             val params' = map transparam params
                             val allocatedFormals = Tr.formals newLevel
-                            fun enterparam ({name, escape, ty, pos}, (venv, curIndex)) = 
+                            fun enterparam ({name, ty}, (venv, curIndex)) = 
                               (S.enter(venv, name, Env.VarEntry{access=List.nth(allocatedFormals, curIndex),
                                                                ty=ty}), curIndex + 1)
                             val venv'' = #1 (foldl enterparam (venv', 1) params')
