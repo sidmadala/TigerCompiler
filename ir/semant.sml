@@ -417,6 +417,7 @@ and transTy(tenv, ty) =
 (* transProg needs to take in expression to translate, run transExp, and return unit *)
 fun transProg(exp_to_translate : A.exp) = 
     let
+      val _ = Tr.resetFragList()
       val main = Tr.newlabel()
       val mainLevel = Tr.newLevel({parent = Tr.outermost, name = main, formals = []})
       val _ = FindEscape.findEscape(exp_to_translate)
