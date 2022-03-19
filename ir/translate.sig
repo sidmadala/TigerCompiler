@@ -19,9 +19,9 @@ val transIF : exp * exp * exp -> exp
 val transAssign : exp * exp -> exp
 val transWHILE : exp * exp * Temp.label -> exp
 val transBREAK : Temp.label -> exp
-val transFOR : exp * bool ref * exp * exp * exp * Temp.label -> exp
+val transFOR : exp * exp * exp * Tree.label -> exp
 val transBinOp : Absyn.oper * exp * exp -> exp
-val transRelOp : Absyn.oper * exp * exp -> exp
+val transRelOp : Absyn.oper * exp * exp * Types.ty -> exp
 val transArray : exp * exp -> exp
 val transRecord : exp list -> exp
 val transSEQEXP : exp list -> exp
