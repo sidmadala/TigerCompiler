@@ -85,4 +85,10 @@ struct
         end
 
     fun externalCall(s,args) = T.CALL(T.NAME(Temp.namedlabel s), args)
+
+    fun procEntryExit3 ({name, formals, numlocals, currentOffset}, body) = 
+                                {prolog = "PROCEDURE " ^ Symbol.name(name) ^ "\n",
+							      body = body,
+							      epilog = "END " ^ Symbol.name(name) ^ "\n"}
+
 end

@@ -12,7 +12,6 @@ TODO:
 FRAME:
 - [ ] make tempmap + lists of regs
 - [ ] procEntryExit2
-- [ ] procEntryExit3
 
 MIPSGEN:
 - [ ] munchexp
