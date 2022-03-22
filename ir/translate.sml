@@ -41,6 +41,10 @@ struct
         TOP => (ErrorMsg.impossible "Tried to allocate a local on top level (angery)")
         |NESTED{parent, frame, unique} => (lvl, F.allocLocal frame esc)
     
+    fun makeSEQ([s]) = s
+      | makeSEQ([a, b]) = T.SEQ(a,b)
+      | makeSEQ(a::l) = T.SEQ(a, makeSEQ l)
+      | makeSEQ([]) = T.EXP(T.CONST 0)
 
     (*BEGINNING OF IR TRANSLATION*)
     fun unEx (Ex e) = e
@@ -50,7 +54,7 @@ struct
                 val r = Temp.newtemp()
                 val t = Temp.newlabel() and f = Temp.newlabel()
             in
-                T.ESEQ(T.SEQ[T.MOVE(T.TEMP r, T.CONST 1),
+                T.ESEQ(makeSEQ[T.MOVE(T.TEMP r, T.CONST 1),
                         genstm(t,f),
                         T.LABEL f,
                         T.MOVE(T.TEMP r, T.CONST 0),
@@ -89,7 +93,7 @@ struct
             val ans = Temp.newtemp()
         in
             Ex(T.ESEQ(
-                T.SEQ[genstm(thenStart, elseStart),
+                makeSEQ[genstm(thenStart, elseStart),
                 T.LABEL thenStart, 
                 T.MOVE(T.TEMP ans, thenBody'),
                 T.JUMP(T.NAME endLabel, [endLabel]),
@@ -110,7 +114,7 @@ struct
           val incrementLabel = Temp.newlabel()
           val loopBodyLabel = Temp.newlabel()
         in
-            Nx(T.SEQ[
+            Nx(makeSEQ[
                 T.MOVE(T.TEMP i, lo'),
                 T.MOVE(T.TEMP hiTemp, hi'),
                 T.CJUMP(T.LE, T.TEMP i, hi', loopBodyLabel, endLabel),
@@ -131,7 +135,7 @@ struct
             val genstm = unCx test
             val body' = unEx body
         in
-            Nx(T.SEQ[
+            Nx(makeSEQ[
                 T.JUMP(T.NAME testLabel, [testLabel]),
                 T.LABEL bodyLabel, 
                 T.EXP body',
@@ -222,7 +226,7 @@ struct
         in
             case List.length decs of 
                 0 => Ex(body')
-              | _ => Ex(T.ESEQ(T.SEQ (map unNx decs), body'))  
+              | _ => Ex(T.ESEQ(makeSEQ (map unNx decs), body'))  
         end
 
     (*SEQEXP -> unclear if ... .. . . this is right? but i guess it can't hurt/we'll find out when we test*)
@@ -271,7 +275,7 @@ struct
                 end  
             val (stms, index) = foldl genSTMS ([recordInit], 0) fieldExps
        in
-            Ex(T.ESEQ(T.SEQ stms, T.TEMP r))
+            Ex(T.ESEQ(makeSEQ stms, T.TEMP r))
         end
 
     (*VARIABLES*)
