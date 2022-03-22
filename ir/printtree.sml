@@ -10,20 +10,18 @@ fun printtree (outstream, s0) =
   fun indent 0 = ()
     | indent i = (say " "; indent(i-1))
 
-
-  fun stm(Tree.SEQ(stmlist),d) =
-          (indent d;
-          sayln "SEQ("; foldl (fn (a, b) => (stm(a,d+1); sayln ","; ())) () stmlist; say ")")
-    | stm(Tree.LABEL lab, d) = (indent d; say "LABEL "; say (Symbol.name lab))
-    | stm(Tree.JUMP (e,_), d) =  (indent d; sayln "JUMP("; exp(e,d+1); say ")")
-    | stm(Tree.CJUMP(r,a,b,t,f),d) = (indent d; say "CJUMP(";
+  fun stm(T.SEQ(a,b),d) =
+          (indent d; sayln "SEQ("; stm(a,d+1); sayln ","; stm(b,d+1); say ")")
+    | stm(T.LABEL lab, d) = (indent d; say "LABEL "; say (Symbol.name lab))
+    | stm(T.JUMP (e,_), d) =  (indent d; sayln "JUMP("; exp(e,d+1); say ")")
+    | stm(T.CJUMP(r,a,b,t,f),d) = (indent d; say "CJUMP(";
 				relop r; sayln ",";
 				exp(a,d+1); sayln ","; exp(b,d+1); sayln ",";
 				indent(d+1); say(Symbol.name t); 
 				say ","; say (Symbol.name f); say ")")
-    | stm(Tree.MOVE(a,b),d) = (indent d; sayln "MOVE("; exp(a,d+1); sayln ",";
+    | stm(T.MOVE(a,b),d) = (indent d; sayln "MOVE("; exp(a,d+1); sayln ",";
 			    exp(b,d+1); say ")")
-    | stm(Tree.EXP e, d) = (indent d; sayln "EXP("; exp(e,d+1); say ")")
+    | stm(T.EXP e, d) = (indent d; sayln "EXP("; exp(e,d+1); say ")")
 
   and exp(T.BINOP(p,a,b),d) = (indent d; say "BINOP("; binop p; sayln ",";
 			       exp(a,d+1); sayln ","; exp(b,d+1); say ")")
@@ -63,4 +61,3 @@ fun printtree (outstream, s0) =
 end
 
 end
-
