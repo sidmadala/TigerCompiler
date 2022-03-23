@@ -57,6 +57,9 @@ struct
           SOME(str) => str
         | NONE => Temp.makestring temp
 
+    (*page 163 🤡🕶️💭*)
+    fun string(label, str) = (Symbol.name label) ^": .asciiz \"" ^ str ^ "\"\n"
+
     (* Where value is held *)
     datatype access = InFrame of int (* InFrame(X) => memory location at offset X from FP *) 
                     | InReg of Temp.temp (* InReg(t1) => value held in register t1 *)

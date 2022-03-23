@@ -283,7 +283,7 @@ struct
       | transSimpleVar((TOP, frameAccess), _) = (ErrorMsg.error ~1 "Variable declared in outermost level"; Ex(T.CONST 0))
       | transSimpleVar(frameAccess, levelFrame) = 
         let
-            (* FIX: Match and binding are nonexhaustive *)
+            (* FIX: binding nonexhaustive *)
             val (NESTED{parent=parent, frame=frame, unique=testRef}, testAccess) = frameAccess
             fun followLink (NESTED{parent=parent', frame=frame', unique=currentRef}, currentAcc) =
                 if testRef = currentRef then F.checkOffset(testAccess)(currentAcc)
@@ -293,6 +293,7 @@ struct
                     in
                         followLink (parent', F.checkOffset(nextLink)(currentAcc))
                     end
+                |followLink (_, _) = ErrorMsg.impossible "fixing match nonexhaustive?"
         in
             Ex(followLink(levelFrame, T.TEMP(F.FP)))
         end

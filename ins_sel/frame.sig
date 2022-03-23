@@ -15,4 +15,5 @@ sig
     val checkOffset: access -> Tree.exp -> Tree.exp
     val tempMap : string Temp.Table.table
     val getRegString : Temp.temp -> string
+    val string : (Temp.label * string) -> string
 end
