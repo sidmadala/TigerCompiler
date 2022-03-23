@@ -1,8 +1,8 @@
-structure T = Types 
-
 structure Env :> ENV = 
 struct
   structure Tr = Translate
+  structure T = Types 
+
   type access = unit
   type ty = Types.ty
   datatype enventry = VarEntry of {access: Translate.access, ty: ty}

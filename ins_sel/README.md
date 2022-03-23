@@ -10,8 +10,8 @@ Main.main "/path/to/test.tig";
 
 TODO:  
 CH8 - BASIC BLOCKS AND TRACES (do we do this? i guess we do):
-- [ ] one function that "nots" a relational operator (< becomes >= etc) when you flip a CJUMP
-- [ ] You also have to implement something that figures out if a statement and expression are independent of each other (can be reordering without changing the meaning).
+- [x] one function that "nots" a relational operator (< becomes >= etc) when you flip a CJUMP
+- [ ] You also have to implement something that figures out if a statement and expression are independent of each other (can be reordering without changing the meaning). (i have no clue what this means/where this goes yet)
 
 CH9 - INSTRUCTION SELECTION:
 FRAME:

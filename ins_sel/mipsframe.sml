@@ -45,17 +45,17 @@ struct
     val callersaves =  [(T0, "$t0"), (T1, "$t1"), (T2, "$t2"), (T3, "$t3"), (T4, "$t4"), (T5, "$t5"), (T6, "$t6"), (T7, "$t7"), (T8, "$t8"), (T9, "$t9")]
 
     val tempMap = 
-            let 
+            (let 
                 fun addRegs ((reg, name), ctable) = Temp.Table.enter(ctable, reg, name)
                 val allRegs = specialregs @ argregs @ calleesaves @ callersaves
             in
                 foldl addRegs Temp.Table.empty allRegs
-            end
+            end)
     
     fun getRegString(temp) = 
-        case tempMap.look temp of 
-          SOME(str) = str
-        | NONE = Temp.makestring temp
+        case Temp.Table.look(tempMap, temp) of 
+          SOME(str) => str
+        | NONE => Temp.makestring temp
 
     (* Where value is held *)
     datatype access = InFrame of int (* InFrame(X) => memory location at offset X from FP *) 
@@ -107,8 +107,8 @@ struct
 
     fun procEntryExit2 (frame, body) =
         body @
-        [A.OPER{assem="",
-        src = (map (fn (reg, name) => reg) specialregs) @ (map (fn (reg, name) => reg) calleesaves)
+        [Assem.OPER{assem="",
+        src = (map (fn (reg, name) => reg) specialregs) @ (map (fn (reg, name) => reg) calleesaves),
         dst=[], jump=SOME[]}]
 
     fun procEntryExit3 ({name, formals, numlocals, currentOffset}, body) = 

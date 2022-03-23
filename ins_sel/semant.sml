@@ -3,6 +3,8 @@ structure A = Absyn
 structure E = Env
 structure S = Symbol
 structure Tr = Translate
+structure T = Types
+
 structure Semant =
 struct
 

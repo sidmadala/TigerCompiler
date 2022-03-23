@@ -1,5 +1,12 @@
 Group is 
 
+assem.sml
+canon.sml
+codegen.sig
+flowgraph.sml
+graph.sig
+graph.sml
+mipsgen.sml
 env.sml
 env.sig
 main.sml
