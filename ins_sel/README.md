@@ -15,11 +15,10 @@ CH8 - BASIC BLOCKS AND TRACES (do we do this? i guess we do):
 
 CH9 - INSTRUCTION SELECTION:
 FRAME:
-- [ ] make tempmap + lists of regs
-- [ ] procEntryExit2
+- [x] make tempmap + lists of regs
+- [x] procEntryExit2 & 3
 
 MIPSGEN:
 - [ ] munchexp
 - [ ] munchstm
 - [ ] munchargs
-

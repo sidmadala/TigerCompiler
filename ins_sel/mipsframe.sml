@@ -38,6 +38,25 @@ struct
     val SP = Temp.newtemp()
     val RA = Temp.newtemp()
 
+    (* Register Lists - NOTE: CAN WRITE GETTERS FOR THESE WHEN/IF NEEDED*)
+    val specialregs = [(FP, "$fp"), (SP, "$sp"), (RA, "$ra"), (ZERO, "$0"), (AT, "$at"), (V0, "$v0"), (V1, "$v1"), (K0, "$k0"), (K1, "$k1"), (GP, "$gp")]
+    val argregs = [(A0, "$a0"), (A1, "$a1"), (A2, "$a2"), (A3, "$a3")]
+    val calleesaves = [(S0, "$s0"), (S1, "$s1"), (S2, "$s2"), (S3, "$s3"), (S4, "$s4"), (S5, "$s5"), (S6, "$s6"), (S7, "$s7")]
+    val callersaves =  [(T0, "$t0"), (T1, "$t1"), (T2, "$t2"), (T3, "$t3"), (T4, "$t4"), (T5, "$t5"), (T6, "$t6"), (T7, "$t7"), (T8, "$t8"), (T9, "$t9")]
+
+    val tempMap = 
+            let 
+                fun addRegs ((reg, name), ctable) = Temp.Table.enter(ctable, reg, name)
+                val allRegs = specialregs @ argregs @ calleesaves @ callersaves
+            in
+                foldl addRegs Temp.Table.empty allRegs
+            end
+    
+    fun getRegString(temp) = 
+        case tempMap.look temp of 
+          SOME(str) = str
+        | NONE = Temp.makestring temp
+
     (* Where value is held *)
     datatype access = InFrame of int (* InFrame(X) => memory location at offset X from FP *) 
                     | InReg of Temp.temp (* InReg(t1) => value held in register t1 *)
@@ -85,6 +104,12 @@ struct
         end
 
     fun externalCall(s,args) = T.CALL(T.NAME(Temp.namedlabel s), args)
+
+    fun procEntryExit2 (frame, body) =
+        body @
+        [A.OPER{assem="",
+        src = (map (fn (reg, name) => reg) specialregs) @ (map (fn (reg, name) => reg) calleesaves)
+        dst=[], jump=SOME[]}]
 
     fun procEntryExit3 ({name, formals, numlocals, currentOffset}, body) = 
                                 {prolog = "PROCEDURE " ^ Symbol.name(name) ^ "\n",

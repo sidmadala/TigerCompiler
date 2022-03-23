@@ -14,4 +14,5 @@ sig
     val externalCall: string * Tree.exp list -> Tree.exp
     val checkOffset: access -> Tree.exp -> Tree.exp
     val tempMap : register Temp.Table.table
+    val getRegString : Temp.temp -> string
 end
