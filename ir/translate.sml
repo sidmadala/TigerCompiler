@@ -188,7 +188,7 @@ struct
                 |_ => ErrorMsg.impossible "we're using transRelOp wrong"
         in
             case (oper', typ) of
-                 (T.EQ, Types.STRING) => Ex(F.externalCall("strEq", [left', right']))
+                 (T.EQ, Types.STRING) => Ex(F.externalCall("stringEqual", [left', right']))
                 |(T.NE, Types.STRING) => Ex(F.externalCall("strNeq", [left', right']))
                 |(T.LT, Types.STRING) => Ex(F.externalCall("strLt", [left', right']))
                 |(T.GT, Types.STRING) => Ex(F.externalCall("strGt", [left', right']))
@@ -265,7 +265,7 @@ struct
         let 
             val r = Temp.newtemp()
             val flen = List.length fieldExps
-            val recordInit = T.MOVE(T.TEMP r, F.externalCall("initRecord", [T.CONST flen]))
+            val recordInit = T.MOVE(T.TEMP r, F.externalCall("allocRecord", [T.CONST flen]))
             fun initField(exp, index) = T.MOVE(T.MEM(T.BINOP(T.PLUS, T.TEMP r, T.CONST(F.wordSize*index))), unEx exp)
             fun genSTMS(currField, (prev, index)) =
                 let 

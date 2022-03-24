@@ -22,9 +22,52 @@ fun codegen (frame) (stm: Tree.stm) : A.instr list =
           | getBinop T.MUL = "mul"
           | getBinop T.DIV = "div"
 
-        (*use canon module to simply trees before applying codegen to them, use format function to translate assem trees to mips assembly, pass Temp.makestring to format as the trans function from temp to strings*)
         fun munchStm(stm) = stm
-        and munchExp(exp) = exp
+        (*do we do shifts???? like sll, sra, etc. (also what about and, or instructions in mips?)*)
+        and munchExp(T.MEM(T.BINOP(T.PLUS, e1, T.CONST i))) = 
+              result(fn r => emit(A.OPER 
+              {assem="lw `d0"^int i^"('s0)\n", 
+              src=[munchExp e1], dst=[r], jump=NONE}))
+          | munchExp(T.MEM(T.BINOP(T.PLUS, T.CONST i, e1))) = 
+              result(fn r => emit(A.OPER 
+              {assem="lw `d0"^int i^"('s0)\n", 
+              src=[munchExp e1], dst=[r], jump=NONE}))
+          | munchExp(T.MEM(e1)) = 
+              result(fn r => emit(A.OPER
+              {assem= "lw `d0 0('s0)\n",
+               src=[munchExp e1], dst=[r], jump=NONE}))
+          | munchExp(T.BINOP(T.PLUS, CONST i, e1)) = 
+              result(fn r => emit(A.OPER
+              {assem="addi `d0, `s0, "^ int i ^"\n"
+               src=[munchExp e1], dst=[r], jump=NONE}))
+          | munchExp(T.BINOP(T.PLUS, e1, CONST i)) = 
+              result(fn r => emit(A.OPER
+              {assem="addi `d0, `s0, "^ int i ^"\n"
+               src=[munchExp e1], dst=[r], jump=NONE}))
+          | munchExp(T.BINOP(oper, e1, e2)) = 
+              result(fn r => emit(A.OPER
+              {assem=getBinop oper ^ " `d0, `s0, `s1\n"
+               src=[munchExp e1, munchExp e2], dst=[r], jump=NONE}))
+          | munchExp(T.ESEQ(s1, e1)) = (munchStm s1; munchExp e1)
+          | munchExp(T.NAME name) = 
+              result(fn r => emit(A.OPER
+              {assem= "la `d0, "^Symbol.name name^"\n"
+               src=[], dst=[r], jump=NONE}))
+          | munchExp(T.CALL(T.NAME fname, args)) = 
+              let
+                val live = (Frame.getTempList Frame.argregs) @ (Frame.getTempList Frame.callersaves) @ [Frame.RA, Frame.V0, Frame.V1] 
+                (*do we have to do some other ??? preamble ?? here?? w SP?? check ED later*)
+              in
+                emit(A.OPER
+                {assem= "jal"^Symbol.name fname^"\n"
+                src=[munchArgs(0, args)], dst=[live], jump=NONE})
+              end
+          | munchExp(T.CONST c) = 
+              result(fn r => emit(A.OPER
+              {assem= "li `d0, "^int c^"\n"
+               src=[], dst=[r], jump=NONE}))
+          | munchExp(T.TEMP t) = t
+          | munchExp(_) = ErrorMsg.impossible "error in mipsgen"
         and munchArgs(index, args) = index
     in munchStm stm;
         rev(!ilist)

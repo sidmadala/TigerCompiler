@@ -57,6 +57,8 @@ struct
           SOME(str) => str
         | NONE => Temp.makestring temp
 
+    fun getTempList(regList) = map (fn (reg, str) => reg) regList
+
     (*page 163 🤡🕶️💭*)
     fun string(label, str) = (Symbol.name label) ^": .asciiz \"" ^ str ^ "\"\n"
 

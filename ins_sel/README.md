@@ -19,6 +19,6 @@ FRAME:
 - [x] procEntryExit2 & 3
 
 MIPSGEN:
-- [ ] munchexp
+- [x] munchexp
 - [ ] munchstm
 - [ ] munchargs

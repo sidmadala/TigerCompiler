@@ -16,4 +16,5 @@ sig
     val tempMap : string Temp.Table.table
     val getRegString : Temp.temp -> string
     val string : (Temp.label * string) -> string
+    val getTempList : Temp.temp * string -> Temp.temp
 end
