@@ -9,6 +9,8 @@ fun codegen (frame) (stm: Tree.stm) : A.instr list =
     let val ilist = ref (nil: A.instr list)
         fun emit x = ilist := x :: !ilist 
         fun result(gen) = let val t = Temp.newtemp() in gen t; t end
+        fun i2s i =
+            if i < 0 then "-" ^ Int.toString (~i) else Int.toString i
 
         fun getRelop T.EQ = "beq"
           | getRelop T.NE = "bne"
@@ -26,32 +28,32 @@ fun codegen (frame) (stm: Tree.stm) : A.instr list =
         (*do we do shifts???? like sll, sra, etc. (also what about and, or instructions in mips?)*)
         and munchExp(T.MEM(T.BINOP(T.PLUS, e1, T.CONST i))) = 
               result(fn r => emit(A.OPER 
-              {assem="lw `d0"^int i^"('s0)\n", 
+              {assem="lw `d0"^ i2s i ^"('s0)\n", 
               src=[munchExp e1], dst=[r], jump=NONE}))
           | munchExp(T.MEM(T.BINOP(T.PLUS, T.CONST i, e1))) = 
               result(fn r => emit(A.OPER 
-              {assem="lw `d0"^int i^"('s0)\n", 
+              {assem="lw `d0"^ i2s i ^"('s0)\n", 
               src=[munchExp e1], dst=[r], jump=NONE}))
           | munchExp(T.MEM(e1)) = 
               result(fn r => emit(A.OPER
               {assem= "lw `d0 0('s0)\n",
                src=[munchExp e1], dst=[r], jump=NONE}))
-          | munchExp(T.BINOP(T.PLUS, CONST i, e1)) = 
+          | munchExp(T.BINOP(T.PLUS, T.CONST i, e1)) = 
               result(fn r => emit(A.OPER
-              {assem="addi `d0, `s0, "^ int i ^"\n"
+              {assem="addi `d0, `s0, "^ i2s i ^"\n",
                src=[munchExp e1], dst=[r], jump=NONE}))
-          | munchExp(T.BINOP(T.PLUS, e1, CONST i)) = 
+          | munchExp(T.BINOP(T.PLUS, e1, T.CONST i)) = 
               result(fn r => emit(A.OPER
-              {assem="addi `d0, `s0, "^ int i ^"\n"
+              {assem="addi `d0, `s0, "^ i2s i ^"\n",
                src=[munchExp e1], dst=[r], jump=NONE}))
           | munchExp(T.BINOP(oper, e1, e2)) = 
               result(fn r => emit(A.OPER
-              {assem=getBinop oper ^ " `d0, `s0, `s1\n"
+              {assem=getBinop oper ^ " `d0, `s0, `s1\n",
                src=[munchExp e1, munchExp e2], dst=[r], jump=NONE}))
           | munchExp(T.ESEQ(s1, e1)) = (munchStm s1; munchExp e1)
           | munchExp(T.NAME name) = 
               result(fn r => emit(A.OPER
-              {assem= "la `d0, "^Symbol.name name^"\n"
+              {assem= "la `d0, "^Symbol.name name^"\n",
                src=[], dst=[r], jump=NONE}))
           | munchExp(T.CALL(T.NAME fname, args)) = 
               let
@@ -59,12 +61,13 @@ fun codegen (frame) (stm: Tree.stm) : A.instr list =
                 (*do we have to do some other ??? preamble ?? here?? w SP?? check ED later*)
               in
                 emit(A.OPER
-                {assem= "jal"^Symbol.name fname^"\n"
-                src=[munchArgs(0, args)], dst=[live], jump=NONE})
+                {assem= "jal"^Symbol.name fname^"\n",
+                src=[munchArgs(0, args)], dst=live, jump=NONE});
+                Frame.RA
               end
           | munchExp(T.CONST c) = 
               result(fn r => emit(A.OPER
-              {assem= "li `d0, "^int c^"\n"
+              {assem= "li `d0, "^ i2s c ^"\n",
                src=[], dst=[r], jump=NONE}))
           | munchExp(T.TEMP t) = t
           | munchExp(_) = ErrorMsg.impossible "error in mipsgen"
