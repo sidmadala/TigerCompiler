@@ -2,7 +2,7 @@
 
 Siddarth Madala (smm158), Michelle Zhang (xmz), Zian Wang (zw142) 
 
-Run FA+IR:
+Run Instruction Selection:
 
 CM.make "sources.cm";
 
