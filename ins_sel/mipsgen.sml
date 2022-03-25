@@ -93,7 +93,7 @@ fun codegen (frame) (stm: Tree.stm) : A.instr list =
               in
                 emit(A.OPER
                 {assem= "jal"^Symbol.name fname^"\n",
-                src=[munchArgs(0, args)], dst=live, jump=NONE});
+                src=munchArgs(0, args), dst=live, jump=NONE});
                 Frame.RA
               end
           | munchExp(T.CONST c) = 
