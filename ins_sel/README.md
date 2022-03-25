@@ -21,4 +21,4 @@ FRAME:
 MIPSGEN:
 - [x] munchexp
 - [x] munchstm
-- [ ] munchargs
+- [x] munchargs
