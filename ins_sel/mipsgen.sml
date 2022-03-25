@@ -92,7 +92,7 @@ fun codegen (frame) (stm: Tree.stm) : A.instr list =
                 (*do we have to do some other ??? preamble ?? here?? w SP?? @ed 144*)
               in
                 emit(A.OPER
-                {assem= "jal"^Symbol.name fname^"\n",
+                {assem= "jal "^Symbol.name fname^"\n",
                 src=munchArgs(0, args), dst=live, jump=NONE});
                 Frame.RA
               end
