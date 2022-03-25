@@ -6,7 +6,6 @@ codegen.sig
 flowgraph.sml
 graph.sig
 graph.sml
-mipsgen.sml
 env.sml
 env.sig
 main.sml
@@ -25,6 +24,7 @@ tiger.lex
 tiger.grm
 frame.sig
 mipsframe.sml
+mipsgen.sml
 findescape.sig
 findescape.sml
 temp.sig

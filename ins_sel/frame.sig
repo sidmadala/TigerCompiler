@@ -7,6 +7,7 @@ sig
     val V1 : Temp.temp
     val V0 : Temp.temp
     val RV : Temp.temp 
+    val SP : Temp.temp
 
     val callersaves : (Temp.temp * string) list
     val argregs : (Temp.temp * string) list
