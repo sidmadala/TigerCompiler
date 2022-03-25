@@ -31,11 +31,11 @@ fun codegen (frame) (stm: Tree.stm) : A.instr list =
           (* sw ops : idk why the order of these operations matter but they do*)
           | munchStm (T.MOVE(T.MEM(T.BINOP(T.PLUS, e1, T.CONST i)), e2)) =
             emit (A.OPER
-            {assem = "sw 's0, " ^ i2s i ^ "(`s1) \n",
+            {assem = "sw `s0, " ^ i2s i ^ "(`s1) \n",
             src = [munchExp e2, munchExp e1], dst = [], jump = NONE})
           | munchStm (T.MOVE(T.MEM(T.BINOP(T.PLUS, T.CONST i, e1)), e2)) =
             emit (A.OPER
-            {assem = "sw 's0, " ^ i2s i ^ "(`s1) \n",
+            {assem = "sw `s0, " ^ i2s i ^ "(`s1) \n",
             src = [munchExp e2, munchExp e1], dst = [], jump = NONE})
           | munchStm (T.MOVE(T.TEMP i, e2)) =
             emit (A.MOVE
@@ -59,15 +59,15 @@ fun codegen (frame) (stm: Tree.stm) : A.instr list =
         (*do we do shifts???? like sll, sra, etc. (also what about and, or instructions in mips?)*)
         and munchExp(T.MEM(T.BINOP(T.PLUS, e1, T.CONST i))) = 
               result(fn r => emit(A.OPER 
-              {assem="lw `d0"^ i2s i ^"('s0)\n", 
+              {assem="lw `d0"^ i2s i ^"(`s0)\n", 
               src=[munchExp e1], dst=[r], jump=NONE}))
           | munchExp(T.MEM(T.BINOP(T.PLUS, T.CONST i, e1))) = 
               result(fn r => emit(A.OPER 
-              {assem="lw `d0"^ i2s i ^"('s0)\n", 
+              {assem="lw `d0"^ i2s i ^"(`s0)\n", 
               src=[munchExp e1], dst=[r], jump=NONE}))
           | munchExp(T.MEM(e1)) = 
               result(fn r => emit(A.OPER
-              {assem= "lw `d0 0('s0)\n",
+              {assem= "lw `d0 0(`s0)\n",
                src=[munchExp e1], dst=[r], jump=NONE}))
           | munchExp(T.BINOP(T.PLUS, T.CONST i, e1)) = 
               result(fn r => emit(A.OPER
