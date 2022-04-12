@@ -11,7 +11,7 @@ struct
 		let
 			val labelToNodeMap = S.empty
 			exception LabelNotFound
-			fun label2node(lab) = case S.lookup(lab) of SOME node => node | NONE => raise LabelNotFound
+			fun label2node(lab) = case S.look(labelToNodeMap, lab) of SOME node => node | NONE => raise LabelNotFound
 			fun initVertex(F.FGRAPH{control, def, use, isMove}, A.OPER{assem, dst, src, jump}, nodeList) =
 					let
 					 	val cur = G.newNode(control)
