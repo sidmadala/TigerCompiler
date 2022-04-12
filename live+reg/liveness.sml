@@ -82,7 +82,7 @@ struct
 								let
 									val deflist = map temp2node (case G.Table.look(def, node) of NONE => [] | SOME(temps) => temps)
 									val liveoutlist = map temp2node (node2templist node)
-									fun connect(a, b) = if G.eq(a, b) then () else (G.rm_edge(a, b); G.rm_edge(b, a); G.mk_edge(a, b))
+									fun connect(a, b) = if G.eq(a, b) then () else (G.rm_edge_catch_exp(a, b); G.rm_edge_catch_exp(b, a); G.mk_edge(a, b))
 								in
 									foldl (fn(a, ans) => (foldl connect () liveoutlist)) () deflist
 								end
