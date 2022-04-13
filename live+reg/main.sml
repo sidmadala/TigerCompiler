@@ -14,6 +14,7 @@ struct
   (*         val _ = app (fn s => Printtree.printtree(out,s)) stms; *)
         val stms' = Canon.traceSchedule(Canon.basicBlocks stms)
         val instrs =   List.concat(map (MipsGen.codegen frame) stms') 
+        val igraph = #1(Liveness.interferenceGraph(#1(MakeGraph.instrs2graph(instrs))))
         val format0 = Assem.format(Temp.makestring)
       in  
         app (fn i => TextIO.output(out,format0 i)) instrs

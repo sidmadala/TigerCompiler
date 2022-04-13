@@ -59,8 +59,8 @@ struct
 						  			let
 						  				val newNode = G.newNode(graph)
 						  			in
-						  				G.Table.enter(node2temp, newNode, temp);
-						  				G.Table.enter(temp2node, temp, newNode);
+						  				G.Table.enter(nodeToTempMap, newNode, temp);
+						  				G.Table.enter(tempToNodeMap, temp, newNode);
 						  				initHelper(graph, tail)
 						  			end
 					  		  | SOME(node) => initHelper(graph, tail)
