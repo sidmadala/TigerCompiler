@@ -6,4 +6,5 @@ sig
 		spillCost: Graph.node -> int,
 		registers: string list}
 	       -> allocation * Temp.temp list
+	
 end

@@ -10,7 +10,9 @@ sig
     val SP : Temp.temp
 
     val callersaves : (Temp.temp * string) list
+    val calleesaves : (Temp.temp * register) list
     val argregs : (Temp.temp * string) list
+    val specialregs : (Temp.temp * register) list
 
     type frame
     type access 
