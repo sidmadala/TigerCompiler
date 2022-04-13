@@ -34,8 +34,8 @@ printtree.sml
 
 
 
-makegraph.sml
 liveness.sml
+makegraph.sml
 
 
 $/basis.cm
