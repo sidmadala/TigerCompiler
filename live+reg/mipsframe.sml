@@ -118,7 +118,7 @@ struct
         src = (map (fn (reg, name) => reg) specialregs) @ (map (fn (reg, name) => reg) calleesaves),
         dst=[], jump=SOME[]}]
 
-    fun procEntryExit3 ({name, formals, numlocals, currentOffset}, body) = 
+    fun procEntryExit3 ({name, formals, numLocals, currentOffset}, body) = 
                                 {prolog = "PROCEDURE " ^ Symbol.name(name) ^ "\n",
 							      body = body,
 							      epilog = "END " ^ Symbol.name(name) ^ "\n"}
