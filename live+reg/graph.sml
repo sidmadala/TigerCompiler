@@ -74,8 +74,11 @@ struct
   structure Table = IntMapTable(type key = node
 				fun getInt(g,n) = n)
 
-
   fun nodename(g,i:int) = "n" ^ Int.toString(i)
+
+  fun getNode(g,i) = i
+
+  fun createNode(g,i) = (g,i)
 
 end
 
