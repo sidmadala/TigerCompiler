@@ -3,6 +3,6 @@ struct
 
 type allocation = string Temp.Table.table
 
-fun color{interference, initial, spillCost, registers} = ()
+fun color{interference, initial, spillCost, registers} = (Temp.Table.empty, [])
 
 end
