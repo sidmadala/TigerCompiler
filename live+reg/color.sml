@@ -29,22 +29,26 @@ fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, 
     (*alloc to return at the end*)
     val alloc : allocation ref = ref initial
 
-    (*equivalent of build procedure, create degree and adjlist arrays*)
-    fun setup(graph) = map (
+    (*equivalent of build procedure, create degree and adjlist arrays as well as simplify worklist*)
+    fun setup(graph) = 
+      let 
+        (*create simplify worklist -> add only nodes with degree less than K*)
+        fun createSimplifyWorklist(n::l) = (
+          (if (Array.sub(degrees, n) < K) 
+            then simplifyWorklist := n::(!simplifyWorklist)
+            else ()); 
+            createSimplifyWorklist(l)
+          )
+          | createSimplifyWorklist([]) = ()
+      in 
+      map (
         fn node => (
           Array.update(degrees, Graph.getNode(node), List.length(Graph.adj(node)));
           Array.update(adjList, Graph.getNode(node), (map Graph.getNode (Graph.adj(node))))
         )
-      )(nodes)
-
-    (*create simplify worklist -> add only nodes with degree less than K*)
-    fun createSimplifyWorklist(n::l) = (
-       (if (Array.sub(degrees, n) < K) 
-        then simplifyWorklist := n::(!simplifyWorklist)
-        else ()); 
-        createSimplifyWorklist(l)
-      )
-      | createSimplifyWorklist([]) = ()
+      )(nodes);
+      createSimplifyWorklist(nodes')
+      end
 
     (*decrement given node degree, if degree is < K, then add to simplifyWorklist*)
     fun decDegree(node) = 
@@ -105,7 +109,6 @@ fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, 
     fun run() = 
       ( 
         setup(graph);
-        createSimplifyWorklist(nodes');
         simplify(!simplifyWorklist);
         chooseColors(!selectStack)
       )
