@@ -14,8 +14,6 @@ fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, 
 
     (*stack containing removed temps from graph*)
     val selectStack: Graph.node' list ref = ref []
-    (*successfully colored nodes!*)
-    val coloredNodes: Graph.node' list ref = ref []
 
     val K = 24 (* number of colors *)
     val nodes = Graph.nodes graph
@@ -41,7 +39,7 @@ fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, 
     (*create simplify worklist -> add only nodes with degree less than K*)
     fun createSimplifyWorklist(n::l) = (
        (if (Array.sub(degrees, n) < K) 
-        then simplifyWorklist := node::(!simplifyWorklist)
+        then simplifyWorklist := n::(!simplifyWorklist)
         else ()); 
         createSimplifyWorklist(l)
       )
@@ -69,7 +67,7 @@ fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, 
               (*decrease degree of all adjacents (to remove node)*)
               map decDegree adjNodes;
               (*add to select stack, delete from simplifyWorklist*)
-              selectStack := node :: !selectStack;
+              selectStack := n :: !selectStack;
               simplifyWorklist := l;
               (*recursion!*)
               simplify(!simplifyWorklist)
@@ -79,14 +77,28 @@ fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, 
     fun chooseColors([]) = ()
       | chooseColors(n::selstack) =
         let 
-          val availableColors = (*list of colors (registers) available, check each node in adjacency list...*)
+          fun notCollidingColor(colorToTry) = List.exists (
+                                            case Temp.Table.look(!alloc, gtemp(Graph.createNode(graph, n))) of
+                                              SOME(color) => color <> colorToTry
+                                            | NONE => true
+                                            ) 
+                                            Array.sub(adjList, n)
+          val availableColors = List.filter notCollidingColor regs
+          val nodeTemp = gtemp(Graph.createNode(graph, n))
         in
-          (case Temp.Table.look((!alloc), Graph.constructNode(graph, node)) of 
-            SOME color => ()
-          | NONE => );
-          chooseColor(selstack)
-              (*need to deal with this*)
+          (case Temp.Table.look((!alloc), nodeTemp) of 
+            (*already colored, do nothing*)
+            SOME(color) => ()
+            (*hasn't been colored yet, color!*)
+          | NONE => 
+            case (availableColors) of 
+              [] => ErrorMsg.impossible "spilling"
+            | color::l => (alloc := Temp.Table.enter(!alloc, nodeTemp, color))
+          );
+          (*recurse!*)
+          chooseColors(selstack)
         end 
+
     (*runs all the helpers .. lmao*)
     fun run() = 
       ( 
@@ -97,6 +109,7 @@ fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, 
       )
   in
     run();
-    !alloc
+    (*empty list placeholding for if we want to implement spill lists*)
+    (!alloc, [])
   end
 end

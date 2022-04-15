@@ -17,7 +17,8 @@ sig
     val rm_edge: {from: node, to: node} -> unit
     val rm_edge_catch_exp: {from: node, to: node} -> unit
     val getNode: graph * node' -> node'
-
+    val createNode: graph * node' -> node
+    
     structure Table : TABLE 
     sharing type Table.key = node
 
