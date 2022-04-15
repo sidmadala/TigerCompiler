@@ -3,6 +3,9 @@ struct
 
 type allocation = string Temp.Table.table
 
+(*debugging*)
+fun printList xs = print(String.concatWith ", " (map Int.toString xs))
+
 fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, spillCost, registers} = 
   let 
     val simplifyWorklist: Graph.node' list ref = ref []
@@ -82,14 +85,15 @@ fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, 
     fun chooseColors([]) = ()
       | chooseColors(n::selstack) =
         let 
-          fun printList xs = print(String.concatWith ", " (map Int.toString xs))
-          (*BUG HERE NOT COLLIDING COLOR NOT HITTING TRUE EVER*)
-          fun notCollidingColor(colorToTry) = (List.exists (
-                                              fn(adjN) =>
-                                                case Temp.Table.look(!alloc, gtemp(Graph.createNode(graph, adjN))) of
-                                                  SOME(color) => color <> colorToTry
-                                                | NONE => true
-                                              ) (Array.sub(adjList, n)));
+          (*BUG HERE NOT COLLIDING COLOR NOT HITTING TRUE EVER - breaks if always false*)
+          fun notCollidingColor(colorToTry) = not (List.exists 
+                                              (
+                                                fn(adjN) =>
+                                                  case Temp.Table.look(!alloc, gtemp(Graph.createNode(graph, adjN))) of
+                                                    SOME(color) => color = colorToTry
+                                                  | NONE => false
+                                              ) 
+                                              (Array.sub(adjList, n)))
           val availableColors = List.filter notCollidingColor registers
           val nodeTemp = gtemp(Graph.createNode(graph, n))
         in
@@ -118,6 +122,7 @@ fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, 
     (*empty list placeholding for if we want to implement spill lists*)
     (!alloc, [])
   end
+
 end
 
 
