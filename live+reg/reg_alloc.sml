@@ -13,7 +13,7 @@ val initialAllocation : allocation =
 val regs = 
     let fun add2list((reg, str), l) = str :: l
     in 
-        foldl add2list [] Frame.allregs
+        foldl add2list [] (Frame.callersaves @ Frame.argregs @ Frame.returnregs @ Frame.calleesaves)
     end
 
 fun spillCost node = 1 

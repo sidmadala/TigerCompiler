@@ -15,7 +15,7 @@ fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, 
     (*stack containing removed temps from graph*)
     val selectStack: Graph.node' list ref = ref []
 
-    val K = 24 (* number of colors *)
+    val K = 24 (* number of colors, callee saves, caller saves, argregs, and return regs *)
     val nodes: Graph.node list = Graph.nodes graph
     val nodes': Graph.node' list = map (fn(n) => Graph.getNode(n)) nodes
     val nodeCount = List.length(nodes)
@@ -41,13 +41,13 @@ fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, 
           )
           | createSimplifyWorklist([]) = ()
       in 
-      map (
-        fn node => (
-          Array.update(degrees, Graph.getNode(node), List.length(Graph.adj(node)));
-          Array.update(adjList, Graph.getNode(node), (map Graph.getNode (Graph.adj(node))))
-        )
-      )(nodes);
-      createSimplifyWorklist(nodes')
+        map (
+          fn node => (
+            Array.update(degrees, Graph.getNode(node), List.length(Graph.adj(node)));
+            Array.update(adjList, Graph.getNode(node), (map Graph.getNode (Graph.adj(node))))
+          )
+        )(nodes);
+        createSimplifyWorklist(nodes')
       end
 
     (*decrement given node degree, if degree is < K, then add to simplifyWorklist*)
@@ -82,13 +82,14 @@ fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, 
     fun chooseColors([]) = ()
       | chooseColors(n::selstack) =
         let 
-          fun notCollidingColor(colorToTry) = List.exists (
+          fun printList xs = print(String.concatWith ", " (map Int.toString xs))
+          (*BUG HERE NOT COLLIDING COLOR NOT HITTING TRUE EVER*)
+          fun notCollidingColor(colorToTry) = (List.exists (
                                               fn(adjN) =>
                                                 case Temp.Table.look(!alloc, gtemp(Graph.createNode(graph, adjN))) of
                                                   SOME(color) => color <> colorToTry
                                                 | NONE => true
-                                              ) (Array.sub(adjList, n))
-
+                                              ) (Array.sub(adjList, n)));
           val availableColors = List.filter notCollidingColor registers
           val nodeTemp = gtemp(Graph.createNode(graph, n))
         in
@@ -98,8 +99,8 @@ fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, 
             (*hasn't been colored yet, color!*)
           | NONE => 
             case (availableColors) of 
-              [] => ErrorMsg.impossible "spilling"
-            | color::l => (alloc := Temp.Table.enter(!alloc, nodeTemp, color))
+              color::l => (alloc := Temp.Table.enter(!alloc, nodeTemp, color))
+            | [] => ErrorMsg.impossible "spilling"
           );
           (*recurse!*)
           chooseColors(selstack)
@@ -118,3 +119,5 @@ fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, 
     (!alloc, [])
   end
 end
+
+

@@ -13,7 +13,7 @@ sig
     val calleesaves : (Temp.temp * string) list
     val argregs : (Temp.temp * string) list
     val specialregs : (Temp.temp * string) list
-    
+    val returnregs : (Temp.temp * string) list
     val allregs : (Temp.temp * string) list
 
     type frame
