@@ -1,8 +1,8 @@
 signature GRAPH =
 sig
+    type node' = int
     type graph
     type node
-    type node' = int
 
     structure Table : TABLE 
     sharing type Table.key = node
@@ -19,9 +19,9 @@ sig
     val mk_edge: {from: node, to: node} -> unit
     val rm_edge: {from: node, to: node} -> unit
     val rm_edge_catch_exp: {from: node, to: node} -> unit
-    val getNode: graph * node' -> node'
+    val getNode: node -> node'
     val createNode: graph * node' -> node
     
-    val nodename: node->string  (* for debugging only *)
+    val nodename: node->string 
 
 end
