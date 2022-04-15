@@ -4,6 +4,9 @@ sig
     type node
     type node' = int
 
+    structure Table : TABLE 
+    sharing type Table.key = node
+    
     val nodes: graph -> node list
     val succ: node -> node list
     val pred: node -> node list
@@ -19,9 +22,6 @@ sig
     val getNode: graph * node' -> node'
     val createNode: graph * node' -> node
     
-    structure Table : TABLE 
-    sharing type Table.key = node
-
     val nodename: node->string  (* for debugging only *)
 
 end

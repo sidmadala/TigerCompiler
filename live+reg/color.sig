@@ -4,7 +4,7 @@ sig
     val color: {interference: Liveness.igraph,
 		initial: allocation,
 		spillCost: Graph.node -> int,
-		registers: string list}
+		regs: string list}
 	       -> allocation * Temp.temp list
 	
 end

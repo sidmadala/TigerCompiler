@@ -33,7 +33,7 @@ fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, 
     fun setup(graph) = map (
         fn node => (
           Array.update(degrees, Graph.getNode(node), List.length(Graph.adj(node)));
-          Array.update(adjList, Graph.getNode(node), map Graph.getNode Graph.adj(node))
+          Array.update(adjList, Graph.getNode(node), (map Graph.getNode Graph.adj(node)))
         )
       )(nodes)
 
