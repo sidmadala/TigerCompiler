@@ -23,7 +23,7 @@ struct
                                       SOME(a) => a
 									                  | NONE => (ErrorMsg.error 0 "couldn't allocate register "; Temp.makestring(x))))
       in  
-        app (fn i => TextIO.output(out,format0 i)) wrapInstrs
+        app (fn i => TextIO.output(out,format0 i)) instrs
       end)
     | emitproc out (F.STRING(lab,s)) = TextIO.output(out, F.string(lab,s))
 

@@ -3,7 +3,7 @@ struct
 
 type allocation = string Temp.Table.table
 
-fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, spillCost, regs} = 
+fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, spillCost, registers} = 
   let 
     val simplifyWorklist: Graph.node' list ref = ref []
     (*sigh doing this imperatively instead of functionally means a bunch of refs*)
@@ -33,7 +33,7 @@ fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, 
     fun setup(graph) = map (
         fn node => (
           Array.update(degrees, Graph.getNode(node), List.length(Graph.adj(node)));
-          Array.update(adjList, Graph.getNode(node), (map Graph.getNode Graph.adj(node)))
+          Array.update(adjList, Graph.getNode(node), (map Graph.getNode (Graph.adj(node))))
         )
       )(nodes)
 
@@ -85,7 +85,7 @@ fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, 
                                                 | NONE => true
                                               ) (Array.sub(adjList, n))
 
-          val availableColors = List.filter notCollidingColor regs
+          val availableColors = List.filter notCollidingColor registers
           val nodeTemp = gtemp(Graph.createNode(graph, n))
         in
           (case Temp.Table.look((!alloc), nodeTemp) of 
