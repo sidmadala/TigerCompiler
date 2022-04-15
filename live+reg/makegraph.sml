@@ -24,7 +24,7 @@ struct
 			  		let
 			  			val cur = G.newNode(control)
 			  		in
-			  			S.enter(!labelToNodeMap, lab, cur);
+			  			labelToNodeMap := S.enter(!labelToNodeMap, lab, cur);
 			  			(F.FGRAPH{control = control, def = G.Table.enter(def,
                         cur, []), use = G.Table.enter(use, cur, []), ismove =
                         G.Table.enter(ismove, cur, false)}, nodeList @ [cur])	
