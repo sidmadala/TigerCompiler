@@ -31,10 +31,11 @@ fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, 
 
     (*equivalent of build procedure, create degree and adjlist arrays*)
     fun setup(graph) = map (
-      fn node => (
-        Array.update(degrees, Graph.getNode(node), List.length(Graph.adj(node)));
-        Array.update(adjList, Graph.getNode(node), map Graph.getNode(Graph.adj(node)))
-      ))(nodes)
+        fn node => (
+          Array.update(degrees, Graph.getNode(node), List.length(Graph.adj(node)));
+          Array.update(adjList, Graph.getNode(node), map Graph.getNode Graph.adj(node))
+        )
+      )(nodes)
 
     (*create simplify worklist -> add only nodes with degree less than K*)
     fun createSimplifyWorklist(n::l) = (
@@ -59,9 +60,9 @@ fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, 
     fun simplify([]) = ()
       | simplify(n::l) = 
             let
-              fun notInSelect(node) = not (List.exists (fn ssNode => ssNode = node) !selectStack)
+              fun notInSelect(node) = not (List.exists (fn(ssNode) => ssNode = node) (!selectStack))
               (*getting adjacent nodes that haven't been eliminated yet (not in selectStack)*)
-              fun getValidAdjacents(node) = List.filter notInSelect Array.sub(adjList, node)
+              fun getValidAdjacents(node) = List.filter notInSelect (Array.sub(adjList, node))
               val adjNodes = getValidAdjacents(n)
             in
               (*decrease degree of all adjacents (to remove node)*)
@@ -78,11 +79,12 @@ fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, 
       | chooseColors(n::selstack) =
         let 
           fun notCollidingColor(colorToTry) = List.exists (
-                                            case Temp.Table.look(!alloc, gtemp(Graph.createNode(graph, n))) of
-                                              SOME(color) => color <> colorToTry
-                                            | NONE => true
-                                            ) 
-                                            Array.sub(adjList, n)
+                                              fn(adjN) =>
+                                                case Temp.Table.look(!alloc, gtemp(Graph.createNode(graph, adjN))) of
+                                                  SOME(color) => color <> colorToTry
+                                                | NONE => true
+                                              ) (Array.sub(adjList, n))
+
           val availableColors = List.filter notCollidingColor regs
           val nodeTemp = gtemp(Graph.createNode(graph, n))
         in
