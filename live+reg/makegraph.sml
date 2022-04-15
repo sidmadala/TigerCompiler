@@ -11,7 +11,9 @@ struct
 		let
 			val labelToNodeMap = ref S.empty
 			exception LabelNotFound
-			fun label2node(lab) = case S.look(!labelToNodeMap, lab) of SOME node => node | NONE => raise LabelNotFound
+			fun label2node(lab) = case S.look(!labelToNodeMap, lab) of SOME node
+              => node | NONE => (print("label not found");
+              G.newNode(G.newGraph()))
 			fun initVertex(F.FGRAPH{control, def, use, ismove}, A.OPER{assem, dst, src, jump}, nodeList) =
 					let
 					 	val cur = G.newNode(control)
@@ -37,6 +39,7 @@ struct
                         cur, [dst]), use = G.Table.enter(use, cur, [src]),
                         ismove = G.Table.enter(ismove, cur, true)}, nodeList @ [cur])
 			  		end
+
 
 			fun addEdge([cur], [A.OPER{assem, dst, src, jump = SOME(labelList)}])
               = (map (fn label => G.mk_edge{from = cur, to = label2node(label)}) labelList; ())
