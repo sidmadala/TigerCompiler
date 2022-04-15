@@ -103,7 +103,7 @@ fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, 
             (*hasn't been colored yet, color!*)
           | NONE => 
             case (availableColors) of 
-              color::l => (alloc := Temp.Table.enter(!alloc, nodeTemp, color))
+              color::l => (print("coloring "^(Temp.makestring nodeTemp)^" with "^color^"\n"); alloc := Temp.Table.enter(!alloc, nodeTemp, color))
             | [] => ErrorMsg.impossible "spilling"
           );
           (*recurse!*)

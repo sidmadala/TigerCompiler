@@ -19,9 +19,14 @@ struct
         val igraph = #1(Liveness.interferenceGraph(#1(MakeGraph.instrs2graph(instrs))))
         val (alloc, spillList) = Reg_Alloc.alloc(igraph)
         val format0 = Assem.format((fn x => 
-                                    case (Temp.Table.look(alloc, x)) of 
+                                    let
+                                      val tempStr:string = Temp.makestring(x)
+                                      val errMsg:string = "couldn't allocate temp: "^tempStr
+                                    in
+                                    (case (Temp.Table.look(alloc, x)) of 
                                       SOME(a) => a
-									                  | NONE => (ErrorMsg.error 0 "couldn't allocate register "; Temp.makestring(x))))
+									                  | NONE => (ErrorMsg.error 0 errMsg; tempStr))
+                                    end))
       in  
         app (fn i => TextIO.output(out,format0 i)) instrs
       end)

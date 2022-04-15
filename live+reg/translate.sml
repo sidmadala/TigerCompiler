@@ -265,7 +265,7 @@ struct
         let 
             val r = Temp.newtemp()
             val flen = List.length fieldExps
-            val recordInit = T.MOVE(T.TEMP r, F.externalCall("allocRecord", [T.CONST flen]))
+            val recordInit = T.MOVE(T.TEMP r, F.externalCall("allocRecord", [T.CONST(flen * F.wordSize)]))
             fun initField(exp, index) = T.MOVE(T.MEM(T.BINOP(T.PLUS, T.TEMP r, T.CONST(F.wordSize*index))), unEx exp)
             fun genSTMS(currField, (prev, index)) =
                 let 
@@ -283,7 +283,6 @@ struct
       | transSimpleVar((TOP, frameAccess), _) = (ErrorMsg.error ~1 "Variable declared in outermost level"; Ex(T.CONST 0))
       | transSimpleVar(frameAccess, levelFrame) = 
         let
-            (* FIX: binding nonexhaustive *)
             val (NESTED{parent=parent, frame=frame, unique=testRef}, testAccess) = frameAccess
             fun followLink (NESTED{parent=parent', frame=frame', unique=currentRef}, currentAcc) =
                 if testRef = currentRef then F.checkOffset(testAccess)(currentAcc)
