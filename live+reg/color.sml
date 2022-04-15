@@ -19,7 +19,7 @@ fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, 
 
     val K = 24 (* number of colors *)
     val nodes = Graph.nodes graph
-    val nodes' = map (fn(node) => Graph.getNode(node)) nodes
+    val nodes' = map (fn(n) => Graph.getNode(n)) nodes
     val nodeCount = List.length(nodes)
 
     (*graph representation*)
@@ -56,17 +56,22 @@ fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, 
         if oldDegree = K then simplifyWorklist := node :: (!simplifyWorklist) else ()
       end 
 
-    (*TODODODOSFKSADOKFAJKWEFHASDKJFHJASDFFFFJSDJDSF*)
     (*helper to check if there are more nodes to simplify, if yes, returns SOME node to simplify, 
     if no returns NONE*)
     fun simplify([]) = ()
-      | simplify(n::simpWL) = 
+      | simplify(n::l) = 
             let
-
+              fun notInSelect(node) = not (List.exists (fn ssNode => ssNode = node) !selectStack)
+              (*getting adjacent nodes that haven't been eliminated yet (not in selectStack)*)
+              fun getValidAdjacents(node) = List.filter notInSelect Array.sub(adjList, node)
+              val adjNodes = getValidAdjacents(n)
             in
-              simplifyWorklist := simpWL
-              selectStack := node :: !selectStack
-              map decDegree (getAdjacent(node))
+              (*decrease degree of all adjacents (to remove node)*)
+              map decDegree adjNodes;
+              (*add to select stack, delete from simplifyWorklist*)
+              selectStack := node :: !selectStack;
+              simplifyWorklist := l;
+              (*recursion!*)
               simplify(!simplifyWorklist)
             end
 
@@ -82,7 +87,6 @@ fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, 
           chooseColor(selstack)
               (*need to deal with this*)
         end 
-    (*etjsadjfhawejhfaTODODOODODODOODO*)
     (*runs all the helpers .. lmao*)
     fun run() = 
       ( 
