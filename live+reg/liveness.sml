@@ -53,25 +53,25 @@ struct
 			val node2templist = init(control, def, use, ismove)
 			fun makeIGraph() = 
 				let
-					val tempToNodeMap = Temp.Table.empty
-					val nodeToTempMap = G.Table.empty
+					val tempToNodeMap = ref Temp.Table.empty
+					val nodeToTempMap = ref G.Table.empty
 
 					fun contains(map, key) = case G.Table.look(map, key) of SOME value => true | NONE => false
 
 					exception TempNotFound
 
-					fun temp2node temp = case Temp.Table.look(tempToNodeMap, temp) of SOME node => node | NONE => raise TempNotFound
-					fun node2temp node = case G.Table.look(nodeToTempMap, node) of SOME temp => temp | NONE => raise NodeNotFound
+					fun temp2node temp = case Temp.Table.look(!tempToNodeMap, temp) of SOME node => node | NONE => raise TempNotFound
+					fun node2temp node = case G.Table.look(!nodeToTempMap, node) of SOME temp => temp | NONE => raise NodeNotFound
 
 					fun initHelper(graph, []) = graph
 					  | initHelper(graph, temp::tail) = 
-					  		case Temp.Table.look(tempToNodeMap, temp) of
+					  		case Temp.Table.look(!tempToNodeMap, temp) of
 					  			NONE => 
 						  			let
 						  				val newNode = G.newNode(graph)
 						  			in
-						  				G.Table.enter(nodeToTempMap, newNode, temp);
-						  				Temp.Table.enter(tempToNodeMap, temp, newNode);
+						  				G.Table.enter(!nodeToTempMap, newNode, temp);
+						  				Temp.Table.enter(!tempToNodeMap, temp, newNode);
 						  				initHelper(graph, tail)
 						  			end
 					  		  | SOME(node) => initHelper(graph, tail)
@@ -88,7 +88,6 @@ struct
 
 					fun addEdge(graph) = 
 						let
-							val moves = []
 							fun interfereHelper(graph, node) =
 								let
 									val deflist = map temp2node (case G.Table.look(def, node) of NONE => [] | SOME(temps) => temps)

@@ -9,9 +9,9 @@ struct
 	(*fun instrs2graph: Assem.instr list -> Flow.flowgraph * Flow.Graph.node list*)
 	fun instrs2graph instrs = 
 		let
-			val labelToNodeMap = S.empty
+			val labelToNodeMap = ref S.empty
 			exception LabelNotFound
-			fun label2node(lab) = case S.look(labelToNodeMap, lab) of SOME node => node | NONE => raise LabelNotFound
+			fun label2node(lab) = case S.look(!labelToNodeMap, lab) of SOME node => node | NONE => raise LabelNotFound
 			fun initVertex(F.FGRAPH{control, def, use, ismove}, A.OPER{assem, dst, src, jump}, nodeList) =
 					let
 					 	val cur = G.newNode(control)
@@ -24,7 +24,7 @@ struct
 			  		let
 			  			val cur = G.newNode(control)
 			  		in
-			  			S.enter(labelToNodeMap, lab, cur);
+			  			S.enter(!labelToNodeMap, lab, cur);
 			  			(F.FGRAPH{control = control, def = G.Table.enter(def,
                         cur, []), use = G.Table.enter(use, cur, []), ismove =
                         G.Table.enter(ismove, cur, false)}, nodeList @ [cur])	
