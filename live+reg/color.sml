@@ -16,8 +16,8 @@ fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, 
     val selectStack: Graph.node' list ref = ref []
 
     val K = 24 (* number of colors *)
-    val nodes = Graph.nodes graph
-    val nodes' = map (fn(n) => Graph.getNode(n)) nodes
+    val nodes: Graph.node list = Graph.nodes graph
+    val nodes': Graph.node' list = map (fn(n) => Graph.getNode(n)) nodes
     val nodeCount = List.length(nodes)
 
     (*graph representation*)
