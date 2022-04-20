@@ -31,6 +31,16 @@ temp.sig
 temp.sml
 tree.sml
 printtree.sml
+
+
+
+liveness.sml
+makegraph.sml
+color.sig
+color.sml
+reg_alloc.sig
+reg_alloc.sml
+
 $/basis.cm
 $/smlnj-lib.cm
 $/ml-yacc-lib.cm

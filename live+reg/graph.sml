@@ -5,13 +5,6 @@ struct
 
   datatype noderep = NODE of {succ: node' list, pred: node' list}
 
-  val emptyNode = NODE{succ=[],pred=[]}
-
-  val bogusNode = NODE{succ=[~1],pred=[]}
-
-  fun isBogus(NODE{succ= ~1::_,...}) = true
-    | isBogus _ = false
-
   structure A = DynamicArrayFn(struct open Array
 				    type elem = noderep
 				    type vector = noderep vector
@@ -21,6 +14,17 @@ struct
   type graph = A.array
 
   type node = graph * node'
+
+  structure Table = IntMapTable(type key = node
+				fun getInt(g,n) = n)
+
+  val emptyNode = NODE{succ=[],pred=[]}
+
+  val bogusNode = NODE{succ=[~1],pred=[]}
+
+  fun isBogus(NODE{succ= ~1::_,...}) = true
+    | isBogus _ = false
+
   fun eq((_,a),(_,b)) = a=b
 
   fun augment (g: graph) (n: node') : node = (g,n)
@@ -71,11 +75,11 @@ struct
   val rm_edge = diddle_edge delete
   fun rm_edge_catch_exp pair = rm_edge pair handle GraphEdge => ()
 
-  structure Table = IntMapTable(type key = node
-				fun getInt(g,n) = n)
-
-
   fun nodename(g,i:int) = "n" ^ Int.toString(i)
+
+  fun getNode(g,i) = i
+
+  fun createNode(g,i) = (g,i)
 
 end
 
