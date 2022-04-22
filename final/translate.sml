@@ -314,8 +314,8 @@ struct
     fun procEntryExit ({level = TOP, body}) = (ErrorMsg.error ~1 "function is declared in outermost level"; ())
       | procEntryExit ({level = NESTED{parent, frame, unique}, body}) =
         let 
-            val body' = unEx body
-            val body'' = F.PROC{body = T.MOVE(T.TEMP F.RV, body'), frame = frame}  (* Why the move? *)
+            val body' = unNx body
+            val body'' = F.PROC{body = F.procEntryExit1(frame, body'), frame = frame}  (* Why the move? *)
         in 
             fraglist := !fraglist @ [body'']  (* What is the order here? *)
         end

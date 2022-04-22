@@ -111,6 +111,61 @@ struct
         end
 
     fun externalCall(s,args) = T.CALL(T.NAME(Temp.namedlabel s), args)
+    
+    fun makeSEQ([s]) = s
+      | makeSEQ([a, b]) = T.SEQ(a,b)
+      | makeSEQ(a::l) = T.SEQ(a, makeSEQ l)
+      | makeSEQ([]) = T.EXP(T.CONST 0)
+    
+    fun accessToExp(access) = 
+        let 
+            fun acc2exp (InFrame(i)) fp = Tree.MEM(Tree.BINOP(Tree.PLUS, fp, Tree.CONST(i)))
+              | acc2exp (InReg(reg)) fp = Tree.TEMP(reg)
+        in
+            case access of 
+                InFrame(i) => acc2exp (InFrame(i)) (Tree.TEMP(FP))
+                |InReg(reg) => acc2exp (InReg(reg)) (Tree.TEMP(FP))
+        end
+
+    (* setup callersaves andS return address *)
+    fun procEntryExit1(frame, body) = let
+            val s0alloc = allocLocal(frame)(true)
+            val s1alloc = allocLocal(frame)(true)
+            val s2alloc = allocLocal(frame)(true)
+            val s3alloc = allocLocal(frame)(true)
+            val s4alloc = allocLocal(frame)(true)
+            val s5alloc = allocLocal(frame)(true)
+            val s6alloc = allocLocal(frame)(true)
+            val s7alloc = allocLocal(frame)(true)
+            val raalloc = allocLocal(frame)(true)
+        in
+            makeSEQ([
+                Tree.MOVE(Tree.TEMP(FP), Tree.BINOP(Tree.MINUS, Tree.TEMP(FP), Tree.CONST 96)),
+                Tree.MOVE(Tree.TEMP(SP), Tree.BINOP(Tree.MINUS, Tree.TEMP(SP), Tree.CONST 96)),
+                Tree.MOVE(accessToExp(s0alloc), Tree.TEMP(S0)),
+                Tree.MOVE(accessToExp(s1alloc), Tree.TEMP(S1)),
+                Tree.MOVE(accessToExp(s2alloc), Tree.TEMP(S2)),
+                Tree.MOVE(accessToExp(s3alloc), Tree.TEMP(S3)),
+                Tree.MOVE(accessToExp(s4alloc), Tree.TEMP(S4)),
+                Tree.MOVE(accessToExp(s5alloc), Tree.TEMP(S5)),
+                Tree.MOVE(accessToExp(s6alloc), Tree.TEMP(S6)),
+                Tree.MOVE(accessToExp(s7alloc), Tree.TEMP(S7)),
+                Tree.MOVE(accessToExp(raalloc), Tree.TEMP(RA)),
+                body,
+                Tree.MOVE(Tree.TEMP(S0), accessToExp(s0alloc)),
+                Tree.MOVE(Tree.TEMP(S1), accessToExp(s1alloc)),
+                Tree.MOVE(Tree.TEMP(S2), accessToExp(s2alloc)),
+                Tree.MOVE(Tree.TEMP(S3), accessToExp(s3alloc)),
+                Tree.MOVE(Tree.TEMP(S4), accessToExp(s4alloc)),
+                Tree.MOVE(Tree.TEMP(S5), accessToExp(s5alloc)),
+                Tree.MOVE(Tree.TEMP(S6), accessToExp(s6alloc)),
+                Tree.MOVE(Tree.TEMP(S7), accessToExp(s7alloc)),
+                Tree.MOVE(Tree.TEMP(RA), accessToExp(raalloc)),
+                Tree.MOVE(Tree.TEMP(FP), Tree.BINOP(Tree.PLUS, Tree.TEMP(FP), Tree.CONST 96)),
+                Tree.MOVE(Tree.TEMP(SP), Tree.BINOP(Tree.PLUS, Tree.TEMP(SP), Tree.CONST 96)),
+                Tree.JUMP(Tree.TEMP(RA), [])
+            ])
+        end
 
     fun procEntryExit2 (frame, body) =
         body @

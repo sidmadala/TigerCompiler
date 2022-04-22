@@ -1,174 +1,180 @@
-L183: .asciiz "
+L152: .asciiz "
 "
-L174: .asciiz " ."
-L173: .asciiz " O"
-L187:
-add $s7, $s6, $s6
-lw $s7 0($s7)
-beq $s6, $s7, L168 
-L169:
-add $s7, $s6, $s6
-lw $s7 0($s7)
-li $s6, 1
-sub $s7, $s7, $s6
-move $s7, $s7
-li $s6, 0
-move $s6, $s6
-li $s5, 0
-ble $s7, $s5, L167 
+L143: .asciiz " ."
+L142: .asciiz " O"
+PROCEDURE L100
+L156:
+add $t9, $s7, $s7
+lw $t9 0($t9)
+beq $s7, $t9, L137 
+L138:
+add $t9, $s7, $s7
+lw $t8 0($t9)
+li $t9, 1
+sub $t9, $t8, $t9
+move $t7, $t9
+li $t9, 0
+move $t8, $t9
+li $t9, 0
+ble $t7, $t9, L136 
+L119:
+li $t9, 0
+move $t9, $t9
+L139:
+move $t9, $t9
+j L155 
+L137:
+lw $t9 0($fp)
+move $a0, $t9
+jal L99
+move $t9, $ra
+j L139 
+L135:
+addi $t9, $t7, 1
+move $t7, $t9
+L136:
+ble $t7, $t8, L135 
+L157:
+j L119 
+L155:
+END L100
+PROCEDURE L99
+L159:
+add $t9, t0, $fp
+lw $t9 0($t9)
+add $t9, t~4, $t9
+lw $t8 0($t9)
+li $t9, 1
+sub $t9, $t8, $t9
+move t465, $t9
+li $t9, 0
+move t464, $t9
+li $t9, 0
+ble t465, $t9, L154 
+L140:
+li $t9, 0
+move $a0, $t9
+la $t9, L152
+move $a1, $t9
+jal L0
+move $t9, $ra
+j L158 
+L153:
+addi $t9, t465, 1
+move t465, $t9
+L154:
+add $t9, t0, $fp
+lw $t9 0($t9)
+add $t9, t~4, $t9
+lw $t8 0($t9)
+li $t9, 1
+sub $t9, $t8, $t9
+move t463, $t9
+li $t9, 0
+move t462, $t9
+li t495, 0
+ble t463, t495, L151 
+L141:
+li $t9, 0
+move $a0, $t9
+la $t9, L152
+move $a1, $t9
+jal L0
+ble t465, t464, L153 
+L160:
+j L140 
 L150:
-li $s7, 0
-move $s7, $s7
-L170:
-move $s7, $s7
-j L186 
-L168:
-lw $s7 0($fp)
-move $a0, $s7
-jal L130
-move $s7, $ra
-j L170 
-L166:
-addi $s7, $s7, 1
-move $s7, $s7
-L167:
-ble $s7, $s6, L166 
-L188:
-j L150 
-L186:
-L190:
-add $s7, t0, $fp
-lw $s7 0($s7)
-add $s7, t~4, $s7
-lw $s7 0($s7)
-li $s6, 1
-sub $s7, $s7, $s6
-move t503, $s7
-li $s7, 0
-move t502, $s7
-li $s7, 0
-ble t503, $s7, L185 
-L171:
-li $s7, 0
-move $a0, $s7
-la $s7, L183
-move $a1, $s7
+addi $t9, t463, 1
+move t463, $t9
+L151:
+add t503, t0, $fp
+lw t502 0(t503)
+add t501, t~12, t502
+lw t500 0(t501)
+li t505, 4
+mul t504, t446, t505
+add t499, t500, t504
+move t459, t499
+lw t506 0(t459)
+beq t506, t447, L147 
+L148:
+la t507, L143
+move t461, t507
+L149:
+li t508, 0
+move $a0, t508
+move $a1, t461
 jal L0
-move $s7, $ra
-j L189 
-L184:
-addi $s7, t503, 1
-move t503, $s7
-L185:
-add $s7, t0, $fp
-lw $s7 0($s7)
-add $s7, t~4, $s7
-lw $s7 0($s7)
-li $s6, 1
-sub $s7, $s7, $s6
-move t501, $s7
-li $s7, 0
-move t500, $s7
-li $s7, 0
-ble t501, $s7, L182 
-L172:
-li $s7, 0
-move $a0, $s7
-la $s7, L183
-move $a1, $s7
-jal L0
-ble t503, t502, L184 
-L191:
-j L171 
-L181:
-addi $s7, t501, 1
-move t501, $s7
-L182:
-add $s7, t0, $fp
-lw $s7 0($s7)
-add $s7, t~12, $s7
-lw $s7 0($s7)
-li $s6, 4
-mul $s6, t484, $s6
-add $s7, $s7, $s6
-move $s7, $s7
-lw $s7 0($s7)
-beq $s7, t485, L178 
-L179:
-la $s7, L174
-move $s7, $s7
-L180:
-li $s6, 0
-move $a0, $s6
-move $a1, $s7
-jal L0
-ble t501, t500, L181 
-L192:
-j L172 
-L178:
-la $s7, L173
-move $s7, $s7
-j L180 
-L189:
-L194:
-li $s7, 8
-add $s6, t~4, $fp
-sw $s7, 0($s6) 
-add $s7, $s5, $fp
-move t549, $s7
-add $s7, t~4, $fp
-lw $s7 0($s7)
-move $a0, $s7
-li $s7, 0
-move $a1, $s7
+ble t463, t462, L150 
+L161:
+j L141 
+L147:
+la t509, L142
+move t461, t509
+j L149 
+L158:
+END L99
+PROCEDURE L98
+L163:
+li $t8, 8
+add $t9, $s7, $fp
+sw $t8, 0($t9) 
+add $t9, $s7, $fp
+move t511, $t9
+add $t9, $s7, $fp
+lw $t9 0($t9)
+move $a0, $t9
+li $t9, 0
+move $a1, $t9
 jal initArray
-move $s7, $ra
-sw $s7, 0(t549) 
-add $s7, t~12, $fp
-move t551, $s7
-add $s7, t~4, $fp
-lw $s7 0($s7)
-move $a0, $s7
-li $s7, 0
-move $a1, $s7
+move $t9, $ra
+sw $t9, 0(t511) 
+add $t9, $s7, $fp
+move t513, $t9
+add $t9, $s7, $fp
+lw $t9 0($t9)
+move $a0, $t9
+li $t9, 0
+move $a1, $t9
 jal initArray
-move $s7, $ra
-sw $s7, 0(t551) 
-add $s7, t~16, $fp
-move t553, $s7
-add $s7, t~4, $fp
-lw $s7 0($s7)
-add $s6, t~4, $fp
-lw $s6 0($s6)
-add $s7, $s7, $s6
-li $s6, 1
-sub $s7, $s7, $s6
-move $a0, $s7
-li $s7, 0
-move $a1, $s7
+move $t9, $ra
+sw $t9, 0(t513) 
+add $t9, $s7, $fp
+move t515, $t9
+add $t9, $s7, $fp
+lw $t8 0($t9)
+add $t9, $s7, $fp
+lw $t9 0($t9)
+add $t8, $t8, $t9
+li $t9, 1
+sub $t9, $t8, $t9
+move $a0, $t9
+li $t9, 0
+move $a1, $t9
 jal initArray
-move $s7, $ra
-sw $s7, 0(t553) 
-add $s7, t~20, $fp
-move t555, $s7
-add $s7, t~4, $fp
-lw $s7 0($s7)
-add $s6, t~4, $fp
-lw $s6 0($s6)
-add $s7, $s7, $s6
-li $s6, 1
-sub $s7, $s7, $s6
-move $a0, $s7
-li $s7, 0
-move $a1, $s7
+move $t9, $ra
+sw $t9, 0(t515) 
+add $t9, $s7, $fp
+move t517, $t9
+add $t9, $s7, $fp
+lw $t8 0($t9)
+add $t9, $s7, $fp
+lw $t9 0($t9)
+add $t8, $t8, $t9
+li $t9, 1
+sub $t9, $t8, $t9
+move $a0, $t9
+li $t9, 0
+move $a1, $t9
 jal initArray
-move $s7, $ra
-sw $s7, 0(t555) 
-li $s7, 0
-move $a0, $s7
-li $s7, 0
-move $a1, $s7
-jal L131
-move $s7, $ra
-j L193 
-L193:
+move $t9, $ra
+sw $t9, 0(t517) 
+li $t9, 0
+move $a0, $t9
+li $t9, 0
+move $a1, $t9
+jal L100
+move $t9, $ra
+j L162 
+L162:
+END L98

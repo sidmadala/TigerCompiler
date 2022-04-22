@@ -31,6 +31,7 @@ sig
     val getRegString : Temp.temp -> string
     val string : (Temp.label * string) -> string
     val getTempList : (Temp.temp * string) list -> Temp.temp list
+    val procEntryExit1: frame * Tree.stm -> Tree.stm
     val procEntryExit2 : frame * Assem.instr list -> Assem.instr list
     val procEntryExit3 : frame * Assem.instr list -> {prolog: string, body : Assem.instr list, epilog: string}
 

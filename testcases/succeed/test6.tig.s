@@ -1,32 +1,38 @@
-L37: .asciiz "str2"
-L36: .asciiz "str"
-L39:
-lw $s7 0($fp)
-move $a0, $s7
-move $a1, $s6
-la $s7, L36
-move $a2, $s7
-jal L34
-move $s7, $ra
-j L38 
-L38:
-L41:
-lw $s7 0($fp)
-move $a0, $s7
-addi $s7, $s6, 1
+L179: .asciiz "str2"
+L178: .asciiz "str"
+PROCEDURE L177
+L181:
+lw $t9 0($fp)
+move $a0, $t9
 move $a1, $s7
-jal L35
-move $s7, $ra
-j L40 
-L40:
-L43:
-li $s7, 0
-move $a0, $s7
-li $s7, 0
-move $a1, $s7
-la $s7, L37
-move $a2, $s7
-jal L34
-move $s7, $ra
-j L42 
-L42:
+la $t9, L178
+move $a2, $t9
+jal L176
+move $t9, $ra
+j L180 
+L180:
+END L177
+PROCEDURE L176
+L183:
+lw $t9 0($fp)
+move $a0, $t9
+addi $t9, $s7, 1
+move $a1, $t9
+jal L177
+move $t9, $ra
+j L182 
+L182:
+END L176
+PROCEDURE L175
+L185:
+li $t9, 0
+move $a0, $t9
+li $t9, 0
+move $a1, $t9
+la $t9, L179
+move $a2, $t9
+jal L176
+move $t9, $ra
+j L184 
+L184:
+END L175

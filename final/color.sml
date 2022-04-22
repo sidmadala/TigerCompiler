@@ -85,7 +85,6 @@ fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, 
     fun chooseColors([]) = ()
       | chooseColors(n::selstack) =
         let 
-          (*BUG HERE NOT COLLIDING COLOR NOT HITTING TRUE EVER - breaks if always false*)
           fun notCollidingColor(colorToTry) = not (List.exists 
                                               (
                                                 fn(adjN) =>
@@ -124,5 +123,3 @@ fun color{interference as Liveness.IGRAPH{graph, tnode, gtemp, moves}, initial, 
   end
 
 end
-
-
