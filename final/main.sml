@@ -14,10 +14,9 @@ struct
   (*         val _ = app (fn s => Printtree.printtree(out,s)) stms; *)
         val stms' = Canon.traceSchedule(Canon.basicBlocks stms)
         val instrs =   List.concat(map (MipsGen.codegen frame) stms') 
-        (*QUESTION: do we run procentryexit2 before sending it into igraph?*)
-      	val wrapInstrs = F.procEntryExit2(frame, instrs)
-        
-        val igraph = #1(Liveness.interferenceGraph(#1(MakeGraph.instrs2graph(wrapInstrs))))
+      	val instrs2 = F.procEntryExit2(frame, instrs)
+        val instrs3 = F.procEntryExit3(frame, instrs2)
+        val igraph = #1(Liveness.interferenceGraph(#1(MakeGraph.instrs2graph(#body instrs3))))
         val (alloc, spillList) = Reg_Alloc.alloc(igraph)
         val format0 = Assem.format((fn x => 
                                     let
@@ -29,7 +28,9 @@ struct
 									                  | NONE => (ErrorMsg.error 0 errMsg; tempStr))
                                     end))
       in  
-        app (fn i => TextIO.output(out,format0 i)) wrapInstrs
+       (TextIO.output(out, #prolog instrs3);
+        app (fn i => TextIO.output(out,format0 i)) (#body instrs3);
+        TextIO.output(out, #epilog instrs3))
       end)
     | emitproc out (F.STRING(lab,s)) = TextIO.output(out, F.string(lab,s))
 

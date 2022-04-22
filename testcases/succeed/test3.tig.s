@@ -1,17 +1,19 @@
-L18: .asciiz "Somebody"
-L17: .asciiz "Nobody"
-L20:
-li $s7, 1000
-sw $s7, 4($s6) 
-la $s7, L17
-sw $s7, 0($s6) 
-li $s7, 8
-move $a0, $s7
+L172: .asciiz "Somebody"
+L171: .asciiz "Nobody"
+PROCEDURE L170
+L174:
+li $t9, 1000
+sw $t9, 4($t8) 
+la $t9, L171
+sw $t9, 0($t8) 
+li $t9, 8
+move $a0, $t9
 jal allocRecord
-move $s6, $ra
-move $s7, $s6
-la $s6, L18
-sw $s6, 0($s7) 
-move $s7, $s7
-j L19 
-L19:
+move $t8, $ra
+move $t8, $t8
+la $t9, L172
+sw $t9, 0($t8) 
+move $t9, $t8
+j L173 
+L173:
+END L170
